@@ -1,0 +1,23 @@
+[project]
+name = "job-title-inferrer"
+version = "0.1.0"
+description = "FastAPI service that infers a job title from a job description using OpenAI."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.138.0",
+    "openai>=2.43.0",
+    "pydantic-settings>=2.14.2",
+    "uvicorn[standard]>=0.49.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.4.0",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

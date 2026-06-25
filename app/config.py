@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-4o-mini"
     request_timeout_seconds: float = 30.0
 
+    r2_account_id: str = ""
+    r2_access_key_id: str = ""
+    r2_secret_access_key: str = ""
+    r2_bucket_name: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

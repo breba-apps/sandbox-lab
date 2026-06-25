@@ -17,3 +17,6 @@ wheels/
 # Pytest / coverage
 .pytest_cache/
 .coverage
+
+# IDE
+.idea

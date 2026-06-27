@@ -1,0 +1,30 @@
+[project]
+name = "setup-docker-sandbox"
+version = "0.1.0"
+description = "Interactive Docker Sandbox secret setup from a project's .env file."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "python-dotenv>=1.0.1",
+]
+
+[project.scripts]
+setup-docker-sandbox = "setup_docker_sandbox.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/setup_docker_sandbox"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"skills" = "setup_docker_sandbox/skills"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

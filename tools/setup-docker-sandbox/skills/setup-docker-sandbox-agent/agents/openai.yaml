@@ -1,0 +1,4 @@
+interface:
+  display_name: "Setup Docker Sandbox Agent"
+  short_description: "Automate Docker Sandbox env secret setup"
+  default_prompt: "Use $setup-docker-sandbox-agent to configure this repo's Docker Sandbox secrets from its .env file."

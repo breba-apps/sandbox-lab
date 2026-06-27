@@ -83,3 +83,24 @@ uv run pytest
 Tests are fully offline — the OpenAI client and the R2 client are both faked via
 FastAPI dependency overrides, so no API key, R2 credentials, or network access is
 required.
+
+## Docker Sandbox Setup CLI
+
+This repository also contains a standalone generic CLI package at
+`tools/setup-docker-sandbox`. It can be installed as a machine-wide tool:
+
+```bash
+uv tool install ./tools/setup-docker-sandbox
+```
+
+Run it from any project directory to classify every variable in that project's
+`.env` file, write repeatable `safe.env` / `unsafe.env` files, record non-secret
+decisions in `sandbox-secrets.toml`, and apply supported Docker Sandbox secret
+commands.
+
+```bash
+setup-docker-sandbox --dry-run
+setup-docker-sandbox --env-file .env.local
+```
+
+`unsafe.env` contains real secret values and must be treated like `.env`.

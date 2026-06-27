@@ -27,6 +27,10 @@ uv run pytest
 # Run a single test file / test
 uv run pytest tests/test_service.py
 uv run pytest tests/test_api.py::test_infer_title_missing_api_key_returns_500
+
+# Test the standalone Docker Sandbox setup CLI package
+cd tools/setup-docker-sandbox
+uv run pytest
 ```
 
 Tests are fully offline: both the OpenAI client and the R2 client are faked via FastAPI
@@ -78,3 +82,20 @@ Request flow: `app/main.py` (route) → `app/service.py` (OpenAI inference) → 
 | 502 | OpenAI request failed, returned an empty title, or the R2 write failed |
 
 Preserve this contract when touching `app/main.py` — it's covered directly by `tests/test_api.py`.
+
+## Standalone Docker Sandbox Setup CLI
+
+`tools/setup-docker-sandbox` is a separate reusable Python package that installs the
+`setup-docker-sandbox` command. It is intentionally generic: it must not hardcode this
+repo's environment variable names or provider names. The CLI asks how to handle every
+`.env` entry, writes `safe.env` for safe runtime config, writes `unsafe.env` for real
+secret values, and stores only non-secret setup decisions in `sandbox-secrets.toml`.
+
+Built-in Docker Sandbox service secrets use `sbx secret set` via stdin. Custom egress
+secrets use `sbx secret set-custom` without `--value`, so Docker prompts for the
+secret instead of exposing it in command arguments.
+
+The tool package also contains an internal Codex skill at
+`tools/setup-docker-sandbox/skills/setup-docker-sandbox-agent`. Keep that skill
+aligned with CLI prompts and secret handling behavior whenever the tool workflow
+changes.

@@ -13,6 +13,7 @@ wheels/
 .env
 .env.*
 !.env.example
+unsafe.env
 
 # Pytest / coverage
 .pytest_cache/

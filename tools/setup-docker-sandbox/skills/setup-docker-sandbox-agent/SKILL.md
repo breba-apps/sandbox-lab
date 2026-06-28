@@ -1,6 +1,6 @@
 ---
 name: setup-docker-sandbox-agent
-description: Use when an AI agent needs to configure Docker Sandbox secrets for a project using the local setup-docker-sandbox CLI, especially from .env files, without relying on a human to answer every prompt. Guides agents through inspecting project config, classifying each env var, driving the interactive CLI, preserving safe.env/unsafe.env/sandbox-secrets.toml, and avoiding accidental secret exposure.
+description: Use when an AI agent needs to configure Docker Sandbox secrets for a project using the local setup-docker-sandbox CLI, especially from .env files, without relying on a human to answer every prompt. Guides agents through inspecting project config, classifying each env var, driving the interactive CLI, preserving proxy-secrets.env/runtime.env/sandbox-secrets.toml, and avoiding accidental secret exposure.
 ---
 
 # Setup Docker Sandbox Agent
@@ -43,7 +43,9 @@ uv tool install --reinstall ./tools/setup-docker-sandbox
 setup-docker-sandbox
 ```
 
-Do not expect a final plan screen. The CLI asks questions while it runs, records the answer for each variable, writes `safe.env` / `unsafe.env` / `sandbox-secrets.toml`, and then runs supported `sbx secret` commands.
+Do not expect a final plan screen. The CLI asks questions while it runs, records the answer for each variable, writes `proxy-secrets.env` / `runtime.env` / `sandbox-secrets.toml`, and then runs supported `sbx secret` commands.
+
+On later runs, the CLI reuses existing decisions from `sandbox-secrets.toml` and values from `proxy-secrets.env` / `runtime.env`; it only asks about new `.env` variables and rewrites generated env files. Agents should still inspect new variables before answering.
 
 5. Classify each env var:
 
@@ -67,8 +69,8 @@ For prompt answers:
 
 6. Review redacted output:
 
-- Confirm `safe.env` contains only non-sensitive runtime config.
-- Confirm `unsafe.env` contains all sensitive values and is gitignored.
+- Confirm `proxy-secrets.env` contains only values that should stay host-side for Docker Sandbox service/custom/registry setup.
+- Confirm `runtime.env` contains only values intentionally visible to sandbox processes.
 - Confirm `sandbox-secrets.toml` contains no secret values.
 - Confirm no command output includes real secret values.
 
@@ -82,10 +84,13 @@ For prompt answers:
 
 ## Agent Decision Rules
 
-- Never echo `.env` values, command stdin secrets, or full contents of `unsafe.env`.
+- Never echo `.env` values, command stdin secrets, or full contents of `proxy-secrets.env`.
+- Never pass `proxy-secrets.env` to `sbx exec --env-file`; it contains proxy-managed secrets that must not enter the sandbox.
+- Use `runtime.env` only when a process intentionally needs runtime-visible values, and only after checking its contents by variable name, not by value.
 - Do not assume provider-specific names. Use code and docs to classify behavior.
 - Ask the user only when a value is missing, an external host cannot be inferred, or a credential exposure choice is high risk.
-- Treat `unsafe.env` like `.env`: local-only, secret-bearing, and not suitable for commits.
+- Treat `proxy-secrets.env` like `.env`: local-only, secret-bearing, and not suitable for commits.
+- Treat `runtime.env` as secret-bearing when it includes `unsafe_runtime` values.
 - Treat `sandbox-secrets.toml` as repeatability metadata only; it must not contain secret values.
 - Prefer built-in service secrets over custom egress when the service is supported by `sbx secret set`.
 - Use custom egress only for non-built-in services where request-header placeholder replacement is compatible.
@@ -97,8 +102,8 @@ For prompt answers:
 Report:
 
 - scope and sandbox name used
-- number of vars written to `safe.env` and `unsafe.env`
+- number of vars written to `proxy-secrets.env` and `runtime.env`
 - built-in service, custom egress, and registry secrets configured or skipped
 - any secrets that remain runtime-visible
-- whether `unsafe.env` is ignored by git
+- whether generated env files are ignored by git
 - validation commands run

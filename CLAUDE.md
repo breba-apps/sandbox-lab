@@ -88,8 +88,12 @@ Preserve this contract when touching `app/main.py` — it's covered directly by 
 `tools/setup-docker-sandbox` is a separate reusable Python package that installs the
 `setup-docker-sandbox` command. It is intentionally generic: it must not hardcode this
 repo's environment variable names or provider names. The CLI asks how to handle every
-`.env` entry, writes `safe.env` for safe runtime config, writes `unsafe.env` for real
-secret values, and stores only non-secret setup decisions in `sandbox-secrets.toml`.
+`.env` entry, writes `proxy-secrets.env` for host-side Docker Sandbox secret
+values, writes `runtime.env` for values intentionally visible to sandbox processes,
+and stores only non-secret setup decisions in `sandbox-secrets.toml`.
+Later runs reuse saved decisions and only prompt for new `.env` variables.
+Never pass `proxy-secrets.env` to `sbx exec --env-file`; it contains
+proxy-managed secrets that should not enter the sandbox.
 
 Built-in Docker Sandbox service secrets use `sbx secret set` via stdin. Custom egress
 secrets use `sbx secret set-custom` without `--value`, so Docker prompts for the

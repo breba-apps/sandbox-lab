@@ -42,11 +42,19 @@ for the current workspace from `sbx` and requires selecting one from the list.
 
 The tool writes:
 
-- `safe.env`: values the user marked as safe runtime environment variables.
-- `unsafe.env`: sensitive values, including proxied and unsafe runtime secrets.
+- `proxy-secrets.env`: host-side proxy/service/custom/registry secret values used to reapply Docker Sandbox secrets.
+- `runtime.env`: only values intentionally visible to sandbox processes (`safe_env` plus `unsafe_runtime`).
 - `sandbox-secrets.toml`: non-secret setup decisions for repeatable future runs.
 
-`unsafe.env` contains real secrets and must be treated like `.env`.
+`proxy-secrets.env` contains real secrets and must be treated like `.env`. Do not
+pass it to `sbx exec --env-file`; those values should stay host-side. If you
+need runtime env for a process, use `runtime.env` and only after confirming every
+value in it is intended to be visible to that process.
+
+On later runs, the CLI reuses saved decisions from `sandbox-secrets.toml` and
+values from `proxy-secrets.env` / `runtime.env`. It only asks classification
+questions for new `.env` variables, then reapplies all known sandbox secrets to
+the selected workspace sandbox and rewrites both generated env files.
 
 ## Docker Sandbox Commands
 

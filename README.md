@@ -94,7 +94,7 @@ uv tool install ./tools/setup-docker-sandbox
 ```
 
 Run it from any project directory to classify every variable in that project's
-`.env` file, write repeatable `safe.env` / `unsafe.env` files, record non-secret
+`.env` file, write repeatable `proxy-secrets.env` / `runtime.env` files, record non-secret
 decisions in `sandbox-secrets.toml`, and apply supported Docker Sandbox secret
 commands.
 
@@ -103,7 +103,8 @@ setup-docker-sandbox --dry-run
 setup-docker-sandbox --env-file .env.local
 ```
 
-`unsafe.env` contains real secret values and must be treated like `.env`.
+`proxy-secrets.env` contains real proxy/registry secret values for repeatability and must be treated like `.env`.
+Do not pass it into sandbox processes.
 
 
 ## Sandbox Decision Tree

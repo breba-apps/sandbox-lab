@@ -13,6 +13,9 @@ wheels/
 .env
 .env.*
 !.env.example
+proxy-secrets.env
+runtime.env
+safe.env
 unsafe.env
 
 # Pytest / coverage

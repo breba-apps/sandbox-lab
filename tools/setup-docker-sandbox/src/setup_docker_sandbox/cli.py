@@ -13,8 +13,10 @@ from setup_docker_sandbox.docker import (
 from setup_docker_sandbox.envfiles import load_env_file
 from setup_docker_sandbox.models import Decision, EnvEntry, Mode, Scope
 from setup_docker_sandbox.planner import (
-    append_unsafe_env_to_gitignore,
-    gitignore_covers_unsafe_env,
+    append_generated_env_to_gitignore,
+    gitignore_covers_generated_env,
+    load_existing_decisions,
+    merge_existing_decision,
     write_outputs,
 )
 
@@ -181,9 +183,9 @@ def print_decision(decision: Decision) -> None:
     elif decision.mode is Mode.REGISTRY_SECRET:
         print(f"{decision.name}: registry credential for {decision.registry}, scope={decision.scope.value}")
     elif decision.mode is Mode.SAFE_ENV:
-        print(f"{decision.name}: safe.env")
+        print(f"{decision.name}: runtime.env safe value")
     else:
-        print(f"{decision.name}: unsafe.env runtime secret")
+        print(f"{decision.name}: runtime.env secret value")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -206,16 +208,24 @@ def main(argv: list[str] | None = None) -> int:
     default_scope, sandbox_name = prompt_scope()
     if default_scope is Scope.SANDBOX and sandbox_name is None:
         return 2
+    existing_decisions = load_existing_decisions(root)
+    if existing_decisions:
+        print(f"Reusing saved decisions for {len(existing_decisions)} variable(s).")
+
     decisions = []
     for entry in entries:
-        decision = decision_for_entry(entry, default_scope, sandbox_name)
+        existing = existing_decisions.get(entry.name)
+        if existing is not None:
+            decision = merge_existing_decision(entry, existing, sandbox_name=sandbox_name)
+        else:
+            decision = decision_for_entry(entry, default_scope, sandbox_name)
         decisions.append(decision)
         print_decision(decision)
 
-    if not gitignore_covers_unsafe_env(root):
-        print("Warning: unsafe.env does not appear to be covered by .gitignore.")
-        if prompt("Append unsafe.env to .gitignore?", default="y").lower() in {"y", "yes"}:
-            print(append_unsafe_env_to_gitignore(root, dry_run=args.dry_run))
+    if not gitignore_covers_generated_env(root):
+        print("Warning: proxy-secrets.env/runtime.env do not appear to be covered by .gitignore.")
+        if prompt("Append proxy-secrets.env and runtime.env to .gitignore?", default="y").lower() in {"y", "yes"}:
+            print(append_generated_env_to_gitignore(root, dry_run=args.dry_run))
 
     for message in write_outputs(root, decisions, dry_run=args.dry_run):
         print(message)

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+import tomllib
 
-from setup_docker_sandbox.models import Decision, Mode
+from setup_docker_sandbox.models import Decision, Mode, Scope
 
 
 def toml_string(value: str) -> str:
@@ -41,3 +42,42 @@ def write_manifest(path: Path, decisions: list[Decision]) -> None:
         lines.append("")
 
     path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def load_manifest(path: Path) -> dict[str, Decision]:
+    if not path.exists():
+        return {}
+
+    data = tomllib.loads(path.read_text(encoding="utf-8"))
+    decisions: dict[str, Decision] = {}
+    for item in data.get("variables", []):
+        if not isinstance(item, dict):
+            continue
+        name = item.get("name")
+        mode = item.get("mode")
+        if not isinstance(name, str) or not isinstance(mode, str):
+            continue
+
+        try:
+            parsed_mode = Mode(mode)
+        except ValueError:
+            continue
+
+        scope_value = item.get("scope", Scope.SANDBOX.value)
+        try:
+            parsed_scope = Scope(scope_value)
+        except ValueError:
+            parsed_scope = Scope.SANDBOX
+
+        decisions[name] = Decision(
+            name=name,
+            value="",
+            mode=parsed_mode,
+            scope=parsed_scope,
+            sandbox_name=item.get("sandbox_name"),
+            service=item.get("service"),
+            host=item.get("host"),
+            registry=item.get("registry"),
+            username=item.get("username"),
+        )
+    return decisions

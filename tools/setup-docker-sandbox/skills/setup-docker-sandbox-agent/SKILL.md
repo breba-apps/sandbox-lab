@@ -82,6 +82,18 @@ For prompt answers:
 - Run the project’s existing tests if setup changes could affect local behavior.
 - If `sbx ls` fails, run `sbx diagnose` or report the auth failure clearly.
 
+## Starting Sandboxes
+
+Use `start-docker-sandbox` when the user wants to start or attach to the agent sandbox for app work:
+
+```bash
+start-docker-sandbox
+```
+
+The command selects a sandbox for the current workspace, detects divergence between `.env` and generated files, asks before updating generated files, writes only `runtime.env` values into a managed block in `/etc/sandbox-persistent.sh`, then runs `sbx run --name <sandbox>`.
+
+Do not manually pass `proxy-secrets.env` into the sandbox. It is host-only.
+
 ## Agent Decision Rules
 
 - Never echo `.env` values, command stdin secrets, or full contents of `proxy-secrets.env`.

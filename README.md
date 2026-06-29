@@ -101,10 +101,13 @@ commands.
 ```bash
 setup-docker-sandbox --dry-run
 setup-docker-sandbox --env-file .env.local
+start-docker-sandbox
 ```
 
-`proxy-secrets.env` contains real proxy/registry secret values for repeatability and must be treated like `.env`.
-Do not pass it into sandbox processes.
+Use `start-docker-sandbox` to refresh `runtime.env` into the selected workspace
+sandbox's `/etc/sandbox-persistent.sh` before attaching. `proxy-secrets.env`
+contains real proxy/registry secret values for repeatability and must be treated
+like `.env`; do not pass it into sandbox processes.
 
 
 ## Sandbox Decision Tree

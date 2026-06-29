@@ -33,6 +33,7 @@ Run it from the project that owns the `.env` file:
 
 ```bash
 setup-docker-sandbox
+start-docker-sandbox
 setup-docker-sandbox --env-file .env.local
 setup-docker-sandbox --dry-run
 ```
@@ -62,6 +63,22 @@ The CLI uses stdin for Docker Sandbox commands that support it, such as built-in
 service secrets and registry credentials. Custom egress secrets use Docker's
 experimental `sbx secret set-custom` without `--value`, so Docker prompts for the
 secret instead of exposing it in command arguments.
+
+## Starting Sandboxes
+
+Use `start-docker-sandbox` instead of calling `sbx run` directly when the app
+needs runtime environment variables.
+
+The command:
+
+- lists Docker Sandboxes for the current workspace and asks which one to use
+- compares `.env` with `proxy-secrets.env`, `runtime.env`, and `sandbox-secrets.toml`
+- asks before updating generated files when `.env` diverges
+- writes `runtime.env` values into a managed block in `/etc/sandbox-persistent.sh`
+- starts or attaches with `sbx run --name <sandbox>`
+
+Only `runtime.env` values are written into the sandbox. `proxy-secrets.env`
+remains host-side.
 
 ## Agent Skill
 

@@ -2,6 +2,7 @@ from pathlib import Path
 import subprocess
 
 from setup_docker_sandbox.docker import (
+    apply_persistent_runtime_env,
     build_docker_command,
     parse_sandbox_json,
     parse_sandbox_list,
@@ -255,3 +256,25 @@ def test_workspace_matches_path_or_basename(tmp_path: Path) -> None:
     assert workspace_matches(str(tmp_path), tmp_path)
     assert workspace_matches(tmp_path.name, tmp_path)
     assert not workspace_matches("other", tmp_path)
+
+
+def test_apply_persistent_runtime_env_uses_stdin_not_argv(monkeypatch) -> None:
+    calls = []
+
+    def fake_run(*args, **kwargs):
+        calls.append((args, kwargs))
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    message = apply_persistent_runtime_env(
+        "demo",
+        [("API_KEY", "secret'with-quote")],
+        dry_run=False,
+    )
+
+    assert message == "updated /etc/sandbox-persistent.sh in demo (1 env vars)"
+    argv = calls[0][0][0]
+    script = calls[0][1]["input"]
+    assert argv == ["sbx", "exec", "demo", "bash", "-s"]
+    assert "secret'with-quote" not in argv
+    assert """export API_KEY='secret'"'"'with-quote'""" in script

@@ -31,6 +31,9 @@ uv run pytest tests/test_api.py::test_infer_title_missing_api_key_returns_500
 # Test the standalone Docker Sandbox setup CLI package
 cd tools/setup-docker-sandbox
 uv run pytest
+
+# Start the selected workspace sandbox after refreshing runtime env
+start-docker-sandbox
 ```
 
 Tests are fully offline: both the OpenAI client and the R2 client are faked via FastAPI
@@ -94,6 +97,9 @@ and stores only non-secret setup decisions in `sandbox-secrets.toml`.
 Later runs reuse saved decisions and only prompt for new `.env` variables.
 Never pass `proxy-secrets.env` to `sbx exec --env-file`; it contains
 proxy-managed secrets that should not enter the sandbox.
+Use `start-docker-sandbox` to select a workspace sandbox, detect `.env` drift,
+write `runtime.env` into `/etc/sandbox-persistent.sh`, and attach with
+`sbx run --name <sandbox>`.
 
 Built-in Docker Sandbox service secrets use `sbx secret set` via stdin. Custom egress
 secrets use `sbx secret set-custom` without `--value`, so Docker prompts for the

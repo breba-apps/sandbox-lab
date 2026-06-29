@@ -1,4 +1,5 @@
 from setup_docker_sandbox.cli import build_parser, prompt_sandbox_name
+from setup_docker_sandbox.start import build_parser as build_start_parser
 
 
 def test_cli_parser_defaults_to_dot_env() -> None:
@@ -16,6 +17,13 @@ def test_cli_parser_accepts_installable_tool_options() -> None:
             "--dry-run",
         ]
     )
+
+    assert args.env_file == ".env.local"
+    assert args.dry_run
+
+
+def test_start_parser_accepts_start_options() -> None:
+    args = build_start_parser().parse_args(["--env-file", ".env.local", "--dry-run"])
 
     assert args.env_file == ".env.local"
     assert args.dry_run

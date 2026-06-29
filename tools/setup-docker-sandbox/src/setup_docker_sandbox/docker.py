@@ -310,3 +310,57 @@ def run_docker_commands(
             continue
         messages.append(f"ran: {printable}")
     return messages
+
+
+def shell_export_line(name: str, value: str) -> str:
+    return f"export {name}={shell_single_quote(value)}"
+
+
+def shell_single_quote(value: str) -> str:
+    return "'" + value.replace("'", "'\"'\"'") + "'"
+
+
+def apply_persistent_runtime_env(
+    sandbox_name: str,
+    entries: list[tuple[str, str]],
+    *,
+    dry_run: bool,
+) -> str:
+    if dry_run:
+        return f"dry-run: update /etc/sandbox-persistent.sh in {sandbox_name} ({len(entries)} env vars)"
+
+    block_lines = [
+        "# setup-docker-sandbox managed env: begin",
+        *[shell_export_line(name, value) for name, value in entries],
+        "# setup-docker-sandbox managed env: end",
+    ]
+    managed_block = "\n".join(block_lines) + "\n"
+    script = f"""set -eu
+file=/etc/sandbox-persistent.sh
+tmp="$(mktemp)"
+touch "$file"
+awk '
+  /^# setup-docker-sandbox managed env: begin$/ {{ skip=1; next }}
+  /^# setup-docker-sandbox managed env: end$/ {{ skip=0; next }}
+  !skip {{ print }}
+' "$file" > "$tmp"
+cat >> "$tmp" <<'EOF_MANAGED_ENV'
+{managed_block}EOF_MANAGED_ENV
+cat "$tmp" > "$file"
+rm -f "$tmp"
+"""
+    subprocess.run(
+        ["sbx", "exec", sandbox_name, "bash", "-s"],
+        input=script,
+        text=True,
+        check=True,
+        capture_output=True,
+    )
+    return f"updated /etc/sandbox-persistent.sh in {sandbox_name} ({len(entries)} env vars)"
+
+
+def run_sandbox(sandbox_name: str, *, dry_run: bool) -> str:
+    if dry_run:
+        return f"dry-run: sbx run --name {sandbox_name}"
+    subprocess.run(["sbx", "run", "--name", sandbox_name], check=True)
+    return f"started sandbox {sandbox_name}"

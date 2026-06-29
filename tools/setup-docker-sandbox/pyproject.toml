@@ -10,6 +10,7 @@ dependencies = [
 
 [project.scripts]
 setup-docker-sandbox = "setup_docker_sandbox.cli:main"
+start-docker-sandbox = "setup_docker_sandbox.start:main"
 
 [dependency-groups]
 dev = [

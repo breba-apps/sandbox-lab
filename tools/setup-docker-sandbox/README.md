@@ -36,16 +36,20 @@ setup-docker-sandbox
 start-docker-sandbox
 setup-docker-sandbox --env-file .env.local
 setup-docker-sandbox --dry-run
+start-docker-sandbox --create
 ```
 
-When sandbox-scoped setup is selected, the CLI lists existing Docker Sandboxes
-for the current workspace from `sbx` and requires selecting one from the list.
+When sandbox-scoped setup is selected, the CLI records that the decision should
+be applied to a sandbox later. It does not store a concrete sandbox name in
+`sandbox-secrets.toml`; `start-docker-sandbox` chooses or creates the sandbox
+instance at application time.
 
 The tool writes:
 
 - `proxy-secrets.env`: host-side proxy/service/custom/registry secret values used to reapply Docker Sandbox secrets.
 - `runtime.env`: only values intentionally visible to sandbox processes (`safe_env` plus `unsafe_runtime`).
 - `sandbox-secrets.toml`: non-secret setup decisions for repeatable future runs.
+  Sandbox-scoped decisions are intentionally not bound to one sandbox name.
 
 `proxy-secrets.env` contains real secrets and must be treated like `.env`. Do not
 pass it to `sbx exec --env-file`; those values should stay host-side. If you
@@ -74,11 +78,17 @@ The command:
 - lists Docker Sandboxes for the current workspace and asks which one to use
 - compares `.env` with `proxy-secrets.env`, `runtime.env`, and `sandbox-secrets.toml`
 - asks before updating generated files when `.env` diverges
+- reapplies Docker Sandbox service/custom/registry secrets for the selected sandbox
 - writes `runtime.env` values into a managed block in `/etc/sandbox-persistent.sh`
 - starts or attaches with `sbx run --name <sandbox>`
 
 Only `runtime.env` values are written into the sandbox. `proxy-secrets.env`
 remains host-side.
+
+Use `start-docker-sandbox --create` to create a new sandbox before applying the
+saved config. In a Git repository, creation defaults to `sbx create --clone`
+using the Git root as the sandbox workspace, even when the command is run from a
+nested app directory.
 
 ## Agent Skill
 

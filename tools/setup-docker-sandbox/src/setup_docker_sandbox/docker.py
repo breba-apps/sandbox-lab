@@ -36,6 +36,51 @@ def sbx_available() -> bool:
     return shutil.which("sbx") is not None
 
 
+def discover_git_root(start: Path) -> Path | None:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(start), "rev-parse", "--show-toplevel"],
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        return None
+    root = result.stdout.strip()
+    if not root:
+        return None
+    return Path(root)
+
+
+def default_sandbox_workspace(start: Path, *, clone: bool) -> Path:
+    if clone:
+        git_root = discover_git_root(start)
+        if git_root is not None:
+            return git_root
+    return start
+
+
+def create_sandbox(
+    *,
+    name: str,
+    agent: str,
+    workspace: Path,
+    clone: bool,
+    dry_run: bool,
+) -> str:
+    argv = ["sbx", "create"]
+    if clone:
+        argv.append("--clone")
+    argv.extend(["--name", name, agent, str(workspace)])
+
+    printable = " ".join(argv)
+    if dry_run:
+        return f"dry-run: {printable}"
+
+    subprocess.run(argv, text=True, check=True, capture_output=True)
+    return f"created sandbox {name}"
+
+
 def list_sandboxes(root: Path | None = None) -> list[str]:
     return list_sandboxes_result(root).names
 
@@ -234,6 +279,9 @@ def scope_args(decision: Decision) -> list[str]:
 
 
 def build_docker_command(decision: Decision) -> DockerCommand | None:
+    if decision.scope is Scope.SANDBOX and not decision.sandbox_name:
+        return None
+
     if decision.mode is Mode.SERVICE_SECRET:
         if not decision.service:
             return None

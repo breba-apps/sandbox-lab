@@ -11,7 +11,15 @@ from setup_docker_sandbox.cli import (
     prompt,
     prompt_sandbox_name,
 )
-from setup_docker_sandbox.docker import apply_persistent_runtime_env, run_sandbox, sbx_available
+from setup_docker_sandbox.docker import (
+    create_sandbox,
+    default_sandbox_workspace,
+    discover_git_root,
+    apply_persistent_runtime_env,
+    run_docker_commands,
+    run_sandbox,
+    sbx_available,
+)
 from setup_docker_sandbox.envfiles import load_env_file
 from setup_docker_sandbox.models import Decision, EnvEntry, Scope
 from setup_docker_sandbox.planner import (
@@ -38,6 +46,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="Refresh sandbox runtime env and start the workspace Docker Sandbox.",
     )
     parser.add_argument("--env-file", default=".env", help="Env file to compare. Default: .env")
+    parser.add_argument("--create", action="store_true", help="Create a new sandbox before starting.")
     parser.add_argument("--dry-run", action="store_true", help="Show actions without writing or running sbx.")
     return parser
 
@@ -89,6 +98,43 @@ def reconcile_decisions(
     return decisions
 
 
+def prompt_new_sandbox_name(*, root: Path, dry_run: bool) -> str | None:
+    git_root = discover_git_root(root)
+    default_name = git_root.name if git_root is not None else root.name
+    name = prompt("New sandbox name", default=default_name)
+    if not name:
+        print("Sandbox name is required.")
+        return None
+
+    agent = prompt("Agent", default="claude")
+    if not agent:
+        print("Agent is required.")
+        return None
+
+    clone = False
+    if git_root is not None:
+        answer = prompt("Use clone mode from Git root", default="y").lower()
+        clone = answer in {"y", "yes"}
+    else:
+        print("No Git repository found; creating a mounted-workspace sandbox.")
+
+    workspace = default_sandbox_workspace(root, clone=clone)
+    try:
+        print(
+            create_sandbox(
+                name=name,
+                agent=agent,
+                workspace=workspace,
+                clone=clone,
+                dry_run=dry_run,
+            )
+        )
+    except Exception as exc:
+        print(f"Failed to create sandbox {name}: {exc}")
+        return None
+    return name
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     root = Path.cwd()
@@ -102,7 +148,7 @@ def main(argv: list[str] | None = None) -> int:
         print(str(exc), file=sys.stderr)
         return 2
 
-    sandbox_name = prompt_sandbox_name()
+    sandbox_name = prompt_new_sandbox_name(root=root, dry_run=args.dry_run) if args.create else prompt_sandbox_name()
     if sandbox_name is None:
         return 2
 
@@ -133,6 +179,9 @@ def main(argv: list[str] | None = None) -> int:
     if not sbx_available():
         print("sbx was not found on PATH.", file=sys.stderr)
         return 2
+
+    for message in run_docker_commands(decisions, dry_run=args.dry_run):
+        print(message)
 
     runtime = runtime_entries(decisions)
     print(

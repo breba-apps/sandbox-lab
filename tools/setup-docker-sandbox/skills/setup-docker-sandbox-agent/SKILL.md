@@ -35,7 +35,7 @@ uv tool install --reinstall ./tools/setup-docker-sandbox
 - Prefer sandbox-scoped setup for project-specific credentials.
 - Use host-only only when the host `sbx` command needs the credential and the sandbox/agent should not.
 - Use global only when the user explicitly wants many future sandboxes to inherit the credential.
-- When sandbox-scoped setup is selected, choose from the sandboxes listed for the current workspace. If none are listed, report that a workspace sandbox must exist before project-scoped setup can continue.
+- Sandbox-scoped setup records reusable decisions. It does not bind the project config to one concrete sandbox name; `start-docker-sandbox` selects or creates the sandbox later.
 
 4. Run the CLI and answer prompts as the agent:
 
@@ -43,14 +43,14 @@ uv tool install --reinstall ./tools/setup-docker-sandbox
 setup-docker-sandbox
 ```
 
-Do not expect a final plan screen. The CLI asks questions while it runs, records the answer for each variable, writes `proxy-secrets.env` / `runtime.env` / `sandbox-secrets.toml`, and then runs supported `sbx secret` commands.
+Do not expect a final plan screen. The CLI asks questions while it runs, records the answer for each variable, writes `proxy-secrets.env` / `runtime.env` / `sandbox-secrets.toml`, and runs supported global or host-side `sbx secret` commands. Sandbox-scoped Docker secret commands are applied by `start-docker-sandbox` after a concrete sandbox is selected or created.
 
 On later runs, the CLI reuses existing decisions from `sandbox-secrets.toml` and values from `proxy-secrets.env` / `runtime.env`; it only asks about new `.env` variables and rewrites generated env files. Agents should still inspect new variables before answering.
 
 5. Classify each env var:
 
 - `safe runtime env var`: Non-sensitive config the sandbox/app can read, such as ports, model names, log levels, feature flags, public URLs, bucket names, account IDs, and timeouts.
-- `built-in service secret`: A Docker-supported service secret. Use this before custom egress when the credential is for one of: `anthropic`, `aws`, `cursor`, `droid`, `github`, `google`, `groq`, `mistral`, `nebius`, `openai`, `openrouter`, `xai`. The CLI stores it with `sbx secret set [-g | sandbox] SERVICE` via stdin, so the secret is not put in argv.
+- `built-in service secret`: A Docker-supported service secret. Use this before custom egress when the credential is for one of: `anthropic`, `aws`, `cursor`, `droid`, `github`, `google`, `groq`, `mistral`, `nebius`, `openai`, `openrouter`, `xai`. The tool stores it with `sbx secret set [-g | sandbox] SERVICE` via stdin, so the secret is not put in argv.
 - `custom egress secret`: A non-built-in outbound API credential where the app can use a placeholder env var and Docker can replace the placeholder in request headers for one or more destination hosts. The CLI uses `sbx secret set-custom` without `--value`, so Docker prompts for the secret instead of exposing it in command arguments.
 - `unsafe runtime secret`: A real secret the app or SDK must read locally, such as database URLs, JWT signing secrets, encryption keys, AWS/R2/S3 signing credentials, or credentials used to compute request signatures.
 - `registry credential`: Token/password for a container registry such as `ghcr.io`, Docker Hub, ECR, ACR, or Artifact Registry.
@@ -90,7 +90,16 @@ Use `start-docker-sandbox` when the user wants to start or attach to the agent s
 start-docker-sandbox
 ```
 
-The command selects a sandbox for the current workspace, detects divergence between `.env` and generated files, asks before updating generated files, writes only `runtime.env` values into a managed block in `/etc/sandbox-persistent.sh`, then runs `sbx run --name <sandbox>`.
+The command selects a sandbox for the current workspace, detects divergence between `.env` and generated files, asks before updating generated files, reapplies Docker Sandbox service/custom/registry secrets, writes only `runtime.env` values into a managed block in `/etc/sandbox-persistent.sh`, then runs `sbx run --name <sandbox>`.
+
+When the user needs a new Docker Sandbox from saved config, use:
+
+```bash
+start-docker-sandbox --create
+```
+
+In a Git repository, creation defaults to clone mode from the Git root, even if
+the CLI is run from a nested project directory such as `app/`.
 
 Do not manually pass `proxy-secrets.env` into the sandbox. It is host-only.
 

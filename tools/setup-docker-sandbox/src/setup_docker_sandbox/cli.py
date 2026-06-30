@@ -95,7 +95,7 @@ def prompt_scope() -> tuple[Scope, str | None]:
         return Scope.GLOBAL, None
     if answer == "h":
         return Scope.HOST, None
-    return Scope.SANDBOX, prompt_sandbox_name()
+    return Scope.SANDBOX, None
 
 
 def decision_for_entry(entry: EnvEntry, default_scope: Scope, sandbox_name: str | None) -> Decision:
@@ -233,6 +233,9 @@ def main(argv: list[str] | None = None) -> int:
     if not sbx_available():
         print("Warning: sbx was not found on PATH; Docker Sandbox commands were not run.")
         return 0
+
+    if any(decision.scope is Scope.SANDBOX for decision in decisions):
+        print("Sandbox-scoped Docker commands are applied by start-docker-sandbox.")
 
     for message in run_docker_commands(
         decisions,

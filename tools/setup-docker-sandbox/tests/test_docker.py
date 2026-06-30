@@ -4,6 +4,8 @@ import subprocess
 from setup_docker_sandbox.docker import (
     apply_persistent_runtime_env,
     build_docker_command,
+    create_sandbox,
+    default_sandbox_workspace,
     parse_sandbox_json,
     parse_sandbox_list,
     run_docker_commands,
@@ -29,6 +31,20 @@ def test_service_secret_uses_stdin() -> None:
     assert command.stdin_secret == "service-secret"
     assert "service-secret" not in command.argv
     assert command.argv == ["sbx", "secret", "set", "demo", "openai"]
+
+
+def test_sandbox_scoped_secret_without_runtime_sandbox_is_not_runnable() -> None:
+    command = build_docker_command(
+        Decision(
+            "OPENAI_API_KEY",
+            "service-secret",
+            Mode.SERVICE_SECRET,
+            scope=Scope.SANDBOX,
+            service="openai",
+        )
+    )
+
+    assert command is None
 
 
 def test_custom_secret_omits_value_from_argv() -> None:
@@ -259,6 +275,59 @@ def test_workspace_matches_path_or_basename(tmp_path: Path) -> None:
     assert workspace_matches(str(tmp_path), child)
     assert workspace_matches(tmp_path.name, tmp_path)
     assert not workspace_matches("other", tmp_path)
+
+
+def test_create_sandbox_uses_sbx_create_clone(monkeypatch, tmp_path: Path) -> None:
+    calls = []
+
+    def fake_run(*args, **kwargs):
+        calls.append((args, kwargs))
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    message = create_sandbox(
+        name="demo",
+        agent="claude",
+        workspace=tmp_path,
+        clone=True,
+        dry_run=False,
+    )
+
+    assert message == "created sandbox demo"
+    assert calls[0][0][0] == [
+        "sbx",
+        "create",
+        "--clone",
+        "--name",
+        "demo",
+        "claude",
+        str(tmp_path),
+    ]
+    assert calls[0][1]["capture_output"] is True
+
+
+def test_create_sandbox_dry_run_does_not_run_subprocess(monkeypatch, tmp_path: Path) -> None:
+    def fake_run(*args, **kwargs):
+        raise AssertionError("subprocess should not run")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    assert create_sandbox(
+        name="demo",
+        agent="claude",
+        workspace=tmp_path,
+        clone=False,
+        dry_run=True,
+    ) == f"dry-run: sbx create --name demo claude {tmp_path}"
+
+
+def test_default_sandbox_workspace_uses_git_root_for_clone(monkeypatch, tmp_path: Path) -> None:
+    app = tmp_path / "app"
+    app.mkdir()
+    monkeypatch.setattr("setup_docker_sandbox.docker.discover_git_root", lambda start: tmp_path)
+
+    assert default_sandbox_workspace(app, clone=True) == tmp_path
+    assert default_sandbox_workspace(app, clone=False) == app
 
 
 def test_apply_persistent_runtime_env_uses_stdin_not_argv(monkeypatch) -> None:

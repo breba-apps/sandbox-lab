@@ -38,6 +38,11 @@ setup-docker-sandbox
 start-docker-sandbox
 ```
 
+Use `start-docker-sandbox --create` to create a new Docker Sandbox from saved
+config. In a Git repository it defaults to clone mode and uses the Git root as
+the sandbox workspace, so it is safe to run from `app/` while keeping the sandbox
+attached to the whole repository.
+
 ## Sandbox Decision Tree
 
 ```mermaid

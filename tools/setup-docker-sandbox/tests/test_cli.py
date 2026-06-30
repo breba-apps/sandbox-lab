@@ -1,4 +1,5 @@
-from setup_docker_sandbox.cli import build_parser, prompt_sandbox_name
+from setup_docker_sandbox.cli import build_parser, prompt_sandbox_name, prompt_scope
+from setup_docker_sandbox.models import Scope
 from setup_docker_sandbox.start import build_parser as build_start_parser
 
 
@@ -23,9 +24,10 @@ def test_cli_parser_accepts_installable_tool_options() -> None:
 
 
 def test_start_parser_accepts_start_options() -> None:
-    args = build_start_parser().parse_args(["--env-file", ".env.local", "--dry-run"])
+    args = build_start_parser().parse_args(["--env-file", ".env.local", "--create", "--dry-run"])
 
     assert args.env_file == ".env.local"
+    assert args.create
     assert args.dry_run
 
 
@@ -50,3 +52,9 @@ def test_prompt_sandbox_name_returns_none_without_workspace_sandboxes(monkeypatc
     )
 
     assert prompt_sandbox_name() is None
+
+
+def test_prompt_scope_sandbox_does_not_select_concrete_sandbox(monkeypatch) -> None:
+    monkeypatch.setattr("builtins.input", lambda _: "s")
+
+    assert prompt_scope() == (Scope.SANDBOX, None)

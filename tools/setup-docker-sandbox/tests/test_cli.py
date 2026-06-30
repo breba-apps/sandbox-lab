@@ -30,6 +30,13 @@ def test_start_parser_accepts_start_options() -> None:
     assert args.dry_run
 
 
+def test_start_parser_accepts_agent_args_after_separator() -> None:
+    args = build_start_parser().parse_args(["--dry-run", "--", "--continue"])
+
+    assert args.dry_run
+    assert args.agent_args == ["--", "--continue"]
+
+
 def test_prompt_sandbox_name_selects_existing_sandbox(monkeypatch) -> None:
     from setup_docker_sandbox.docker import SandboxListResult
 

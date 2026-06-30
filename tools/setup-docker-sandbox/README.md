@@ -34,6 +34,7 @@ Run it from the project that owns the `.env` file:
 ```bash
 setup-docker-sandbox
 start-docker-sandbox
+start-docker-sandbox -- --continue
 setup-docker-sandbox --env-file .env.local
 setup-docker-sandbox --dry-run
 ```
@@ -86,12 +87,22 @@ The command:
 - starts or attaches with `sbx run --name <sandbox>`
 
 Only `runtime.env` values are written into the sandbox. `proxy-secrets.env`
-remains host-side.
+remains host-side. `start-docker-sandbox` does not write the app's `.env`; the
+app runner or sandbox agent should create `.env` from `.env.example` only for
+variables that are not already present in the process environment. Use harmless
+placeholders only for proxy-injected names that must exist locally.
 
 When you choose the create option, `start-docker-sandbox` creates the sandbox
 before applying the saved config. In a Git repository, creation defaults to
 `sbx create --clone` using the Git root as the sandbox workspace, even when the
 command is run from a nested app directory.
+
+Arguments after `--` are passed through to the sandbox agent. Use this to resume
+a prior agent conversation, for example:
+
+```bash
+start-docker-sandbox -- --continue
+```
 
 ## Agent Skill
 

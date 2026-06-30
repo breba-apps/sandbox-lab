@@ -19,7 +19,10 @@ uv sync
 cp .env.example .env
 ```
 
-Then edit `.env` and set `OPENAI_API_KEY` and the `R2_*` variables.
+Then edit `.env` only for values that are not already present in the process
+environment. Environment variables take precedence over `.env`. If a runtime
+proxy injects a secret, use a harmless placeholder in `.env` only when the app or
+SDK requires that variable name to exist locally.
 
 ## Run
 
@@ -88,31 +91,10 @@ Tests are fully offline. The OpenAI client and R2 client are faked through
 FastAPI dependency overrides, so no API key, R2 credentials, or network access is
 required.
 
-## Docker Sandbox Runtime Files
+## Environment Files
 
-When using the root `tools/setup-docker-sandbox` CLI for this app, run it from
-this `app/` directory so generated app-specific files stay encapsulated here:
-
-```bash
-setup-docker-sandbox
-start-docker-sandbox
-```
-
-When you need a new Docker Sandbox, choose the create option from the
-`start-docker-sandbox` sandbox selection menu. From this app directory, newly
-created clone-mode sandboxes use the repository root as their workspace while
-app-specific env files remain in `app/`.
-
-The generated files are:
-
-| File | Purpose |
-| --- | --- |
-| `proxy-secrets.env` | Host-side service/custom/registry secret values used by Docker Sandbox setup |
-| `runtime.env` | Values intentionally written into the sandbox runtime environment |
-| `sandbox-secrets.toml` | Non-secret setup decisions for repeatable runs |
-
-`setup-docker-sandbox` automatically adds missing entries for these generated
-files to this directory's `.gitignore`.
-
-Do not pass `proxy-secrets.env` into sandbox processes. It is host-only and may
-contain real secret values.
+`.env.example` is a template for local app configuration. `.env` is optional and
+should contain only values that are not already supplied by the process
+environment. Do not duplicate variables that already exist in the environment.
+If a container runtime or proxy supplies the real value elsewhere, use a harmless
+placeholder only when the app or SDK requires the variable name to exist locally.

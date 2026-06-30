@@ -1,6 +1,11 @@
 from setup_docker_sandbox.docker import SandboxListResult
 from setup_docker_sandbox.models import Decision, EnvEntry, Mode
-from setup_docker_sandbox.start import detect_divergence, prompt_new_sandbox_name, prompt_sandbox_name_or_create
+from setup_docker_sandbox.start import (
+    detect_divergence,
+    normalize_agent_args,
+    prompt_new_sandbox_name,
+    prompt_sandbox_name_or_create,
+)
 
 
 def test_detect_divergence_finds_new_changed_and_removed_values() -> None:
@@ -27,6 +32,11 @@ def test_detect_divergence_empty_when_values_match() -> None:
     )
 
     assert not divergence.has_changes()
+
+
+def test_normalize_agent_args_strips_separator() -> None:
+    assert normalize_agent_args(["--", "--continue"]) == ["--continue"]
+    assert normalize_agent_args(["--continue"]) == ["--continue"]
 
 
 def test_prompt_new_sandbox_name_creates_clone_sandbox(monkeypatch, tmp_path) -> None:

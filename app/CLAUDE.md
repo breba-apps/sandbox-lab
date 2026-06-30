@@ -78,12 +78,12 @@ The response is only returned after inference and storage both succeed.
 Preserve this contract when touching `src/app/main.py`; it is covered by
 `tests/test_api.py`.
 
-## Sandbox Env Handling
+## Env Handling
 
-Run `setup-docker-sandbox` and `start-docker-sandbox` from this `app/` directory
-when configuring this sample app. App-specific `.env`, `runtime.env`,
-`proxy-secrets.env`, and `sandbox-secrets.toml` belong here, not at repository
-root.
+When running the app, create `.env` from `.env.example` only for variables that
+are not already present in the process environment. If the app is running in a
+container, some env vars may already be in the process environment, while others
+may be proxy-injected and need placeholders in `.env`.
 
 For R2/boto3, the app uses boto3's default addressing behavior. Do not force
 path-style addressing unless that becomes an explicit app requirement.

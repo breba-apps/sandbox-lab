@@ -411,8 +411,11 @@ rm -f "$tmp"
     return f"updated /etc/sandbox-persistent.sh in {sandbox_name} ({len(entries)} env vars)"
 
 
-def run_sandbox(sandbox_name: str, *, dry_run: bool) -> str:
+def run_sandbox(sandbox_name: str, *, dry_run: bool, agent_args: list[str] | None = None) -> str:
+    argv = ["sbx", "run", "--name", sandbox_name]
+    if agent_args:
+        argv.extend(["--", *agent_args])
     if dry_run:
-        return f"dry-run: sbx run --name {sandbox_name}"
-    subprocess.run(["sbx", "run", "--name", sandbox_name], check=True)
+        return f"dry-run: {' '.join(argv)}"
+    subprocess.run(argv, check=True)
     return f"started sandbox {sandbox_name}"

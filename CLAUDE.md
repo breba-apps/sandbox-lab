@@ -10,8 +10,9 @@ how sandboxes are organized and operated. Application code is encapsulated under
 
 ## Layout
 
-- `app/`: sample FastAPI app, app-specific `.env` files, generated sandbox env
-  files, tests, and app documentation.
+- `app/`: sample FastAPI app, app-specific `.env` files, tests, and app
+  documentation. Docker Sandbox setup also writes app-owned generated files
+  there when used for this sample app.
 - `app/src/app/`: sample app source package.
 - `tools/setup-docker-sandbox/`: reusable Docker Sandbox setup/start CLI.
 - `tools/`: location for future sandbox-related tools.
@@ -62,6 +63,12 @@ The tool writes:
   values. Never pass this into sandbox processes.
 - `runtime.env`: values intentionally visible to sandbox processes.
 - `sandbox-secrets.toml`: non-secret setup decisions.
+
+`start-docker-sandbox` does not manage the app's `.env`; the app runner or
+sandbox agent should create `.env` from `.env.example` only for variables that
+are not already present in the process environment. Pass agent arguments after
+`--`, such as `start-docker-sandbox -- --continue`, to resume a prior agent
+conversation.
 
 The tool package also contains an internal Codex skill at
 `tools/setup-docker-sandbox/skills/setup-docker-sandbox-agent`. Keep that skill

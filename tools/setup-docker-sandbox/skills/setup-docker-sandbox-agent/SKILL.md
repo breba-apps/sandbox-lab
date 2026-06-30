@@ -102,6 +102,12 @@ clone mode from the Git root, even if the CLI is run from a nested project
 directory such as `app/`.
 
 Do not manually pass `proxy-secrets.env` into the sandbox. It is host-only.
+When the app needs `.env`, create it from `.env.example` only for variables that
+are not already present in the process environment. Do not copy real
+proxy-managed secret values into `.env`; use harmless placeholders only for
+proxy-injected names that must exist locally.
+Use `start-docker-sandbox -- --continue` when the user asks to resume the
+agent's previous conversation.
 
 ## Agent Decision Rules
 

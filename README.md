@@ -42,6 +42,21 @@ When you need a new Docker Sandbox, choose the create option from the
 `start-docker-sandbox` sandbox selection menu. In a Git repository it defaults to
 clone mode and uses the Git root as the sandbox workspace, so it is safe to run
 from `app/` while keeping the sandbox attached to the whole repository.
+Use `start-docker-sandbox -- --continue` when you want the sandbox agent to
+resume its prior conversation.
+
+Generated Docker Sandbox files for the sample app also live under `app/`:
+
+| File | Purpose |
+| --- | --- |
+| `proxy-secrets.env` | Host-side service/custom/registry secret values used by Docker Sandbox setup |
+| `runtime.env` | Values intentionally written into the sandbox runtime environment |
+| `sandbox-secrets.toml` | Non-secret setup decisions for repeatable runs |
+
+Do not pass `proxy-secrets.env` into sandbox processes. It is host-only and may
+contain real secret values. `start-docker-sandbox` prepares Docker Sandbox
+secrets and runtime environment, but it does not manage the app's `.env`; the
+app runner or sandbox agent follows the app's own `.env.example` guidance.
 
 ## Sandbox Decision Tree
 
@@ -78,7 +93,7 @@ flowchart TD
 ## Sample App
 
 The sample app is documented in [app/README.md](app/README.md). Its local
-configuration, tests, lockfile, and generated sandbox env files live there.
+configuration, tests, and lockfile live there.
 
 Common commands:
 

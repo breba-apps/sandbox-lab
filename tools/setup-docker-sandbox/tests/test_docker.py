@@ -9,6 +9,7 @@ from setup_docker_sandbox.docker import (
     parse_sandbox_json,
     parse_sandbox_list,
     run_docker_commands,
+    run_sandbox,
     sandbox_workspace,
     workspace_matches,
 )
@@ -353,3 +354,22 @@ def test_apply_persistent_runtime_env_uses_stdin_not_argv(monkeypatch) -> None:
     assert argv == ["sbx", "exec", "demo", "bash", "-s"]
     assert "secret'with-quote" not in argv
     assert """export API_KEY='secret'"'"'with-quote'""" in script
+
+
+def test_run_sandbox_passes_agent_args_after_separator(monkeypatch) -> None:
+    calls = []
+
+    def fake_run(*args, **kwargs):
+        calls.append((args, kwargs))
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    assert run_sandbox("demo", dry_run=False, agent_args=["--continue"]) == "started sandbox demo"
+    assert calls[0][0][0] == ["sbx", "run", "--name", "demo", "--", "--continue"]
+
+
+def test_run_sandbox_dry_run_shows_agent_args() -> None:
+    assert (
+        run_sandbox("demo", dry_run=True, agent_args=["--continue"])
+        == "dry-run: sbx run --name demo -- --continue"
+    )

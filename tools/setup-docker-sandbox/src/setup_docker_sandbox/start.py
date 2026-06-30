@@ -47,7 +47,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--env-file", default=".env", help="Env file to compare. Default: .env")
     parser.add_argument("--dry-run", action="store_true", help="Show actions without writing or running sbx.")
+    parser.add_argument(
+        "agent_args",
+        nargs=argparse.REMAINDER,
+        help='Arguments after "--" are passed to the sandbox agent, e.g. -- --continue.',
+    )
     return parser
+
+
+def normalize_agent_args(args: list[str]) -> list[str]:
+    if args and args[0] == "--":
+        return args[1:]
+    return args
 
 
 def detect_divergence(entries: list[EnvEntry], decisions: dict[str, Decision]) -> Divergence:
@@ -223,7 +234,7 @@ def main(argv: list[str] | None = None) -> int:
             dry_run=args.dry_run,
         )
     )
-    print(run_sandbox(sandbox_name, dry_run=args.dry_run))
+    print(run_sandbox(sandbox_name, dry_run=args.dry_run, agent_args=normalize_agent_args(args.agent_args)))
     return 0
 
 

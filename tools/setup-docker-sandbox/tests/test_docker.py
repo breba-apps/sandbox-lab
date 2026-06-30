@@ -306,7 +306,7 @@ def test_create_sandbox_uses_sbx_create_clone(monkeypatch, tmp_path: Path) -> No
         "claude",
         str(tmp_path),
     ]
-    assert calls[0][1]["capture_output"] is True
+    assert "capture_output" not in calls[0][1]
 
 
 def test_create_sandbox_dry_run_does_not_run_subprocess(monkeypatch, tmp_path: Path) -> None:

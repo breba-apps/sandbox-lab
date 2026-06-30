@@ -77,7 +77,8 @@ def create_sandbox(
     if dry_run:
         return f"dry-run: {printable}"
 
-    subprocess.run(argv, text=True, check=True, capture_output=True)
+    print(f"running: {printable}", flush=True)
+    subprocess.run(argv, text=True, check=True)
     return f"created sandbox {name}"
 
 

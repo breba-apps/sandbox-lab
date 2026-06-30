@@ -45,10 +45,10 @@ setup-docker-sandbox
 start-docker-sandbox
 ```
 
-Use `start-docker-sandbox --create` to create a new sandbox from saved config.
-If run inside a Git repository, it defaults to `sbx create --clone` from the Git
-root so the sandbox workspace covers the full repository even when started from
-`app/`.
+When a new sandbox is needed, choose the create option from the
+`start-docker-sandbox` sandbox selection menu. If run inside a Git repository,
+it defaults to `sbx create --clone` from the Git root so the sandbox workspace
+covers the full repository even when started from `app/`.
 
 ## Tool Boundary
 

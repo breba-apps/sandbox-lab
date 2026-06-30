@@ -9,13 +9,13 @@ from setup_docker_sandbox.cli import (
     decision_for_entry,
     print_decision,
     prompt,
-    prompt_sandbox_name,
 )
 from setup_docker_sandbox.docker import (
     create_sandbox,
     default_sandbox_workspace,
     discover_git_root,
     apply_persistent_runtime_env,
+    list_sandboxes_result,
     run_docker_commands,
     run_sandbox,
     sbx_available,
@@ -46,7 +46,6 @@ def build_parser() -> argparse.ArgumentParser:
         description="Refresh sandbox runtime env and start the workspace Docker Sandbox.",
     )
     parser.add_argument("--env-file", default=".env", help="Env file to compare. Default: .env")
-    parser.add_argument("--create", action="store_true", help="Create a new sandbox before starting.")
     parser.add_argument("--dry-run", action="store_true", help="Show actions without writing or running sbx.")
     return parser
 
@@ -135,6 +134,39 @@ def prompt_new_sandbox_name(*, root: Path, dry_run: bool) -> str | None:
     return name
 
 
+def prompt_sandbox_name_or_create(*, root: Path, dry_run: bool) -> str | None:
+    sandbox_result = list_sandboxes_result(root)
+    sandboxes = sandbox_result.names
+    if not sandboxes:
+        if sandbox_result.error:
+            print(f"Could not list existing Docker Sandboxes: {sandbox_result.error}")
+            if sandbox_result.all_names:
+                print("Sandboxes found outside this workspace:")
+                for name in sandbox_result.all_names:
+                    print(f"  - {name}")
+        else:
+            print("No Docker Sandboxes found for this workspace.")
+        return prompt_new_sandbox_name(root=root, dry_run=dry_run)
+
+    create_index = len(sandboxes) + 1
+    print("Docker Sandboxes for this workspace")
+    for index, name in enumerate(sandboxes, start=1):
+        print(f"  {index}) {name}")
+    print(f"  {create_index}) Create new sandbox")
+
+    while True:
+        answer = prompt("Choose sandbox to use", default="1").lower()
+        if answer.isdigit():
+            index = int(answer)
+            if 1 <= index <= len(sandboxes):
+                return sandboxes[index - 1]
+            if index == create_index:
+                return prompt_new_sandbox_name(root=root, dry_run=dry_run)
+        if answer in {"c", "create", "new"}:
+            return prompt_new_sandbox_name(root=root, dry_run=dry_run)
+        print(f"Please choose 1-{create_index}.")
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     root = Path.cwd()
@@ -148,7 +180,7 @@ def main(argv: list[str] | None = None) -> int:
         print(str(exc), file=sys.stderr)
         return 2
 
-    sandbox_name = prompt_new_sandbox_name(root=root, dry_run=args.dry_run) if args.create else prompt_sandbox_name()
+    sandbox_name = prompt_sandbox_name_or_create(root=root, dry_run=args.dry_run)
     if sandbox_name is None:
         return 2
 

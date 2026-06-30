@@ -98,10 +98,10 @@ setup-docker-sandbox
 start-docker-sandbox
 ```
 
-Use `start-docker-sandbox --create` to create a new Docker Sandbox from saved
-config. From this app directory, newly created clone-mode sandboxes use the
-repository root as their workspace while app-specific env files remain in
-`app/`.
+When you need a new Docker Sandbox, choose the create option from the
+`start-docker-sandbox` sandbox selection menu. From this app directory, newly
+created clone-mode sandboxes use the repository root as their workspace while
+app-specific env files remain in `app/`.
 
 The generated files are:
 

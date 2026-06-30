@@ -24,10 +24,9 @@ def test_cli_parser_accepts_installable_tool_options() -> None:
 
 
 def test_start_parser_accepts_start_options() -> None:
-    args = build_start_parser().parse_args(["--env-file", ".env.local", "--create", "--dry-run"])
+    args = build_start_parser().parse_args(["--env-file", ".env.local", "--dry-run"])
 
     assert args.env_file == ".env.local"
-    assert args.create
     assert args.dry_run
 
 

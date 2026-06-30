@@ -36,7 +36,6 @@ setup-docker-sandbox
 start-docker-sandbox
 setup-docker-sandbox --env-file .env.local
 setup-docker-sandbox --dry-run
-start-docker-sandbox --create
 ```
 
 When sandbox-scoped setup is selected, the CLI records that the decision should
@@ -79,6 +78,7 @@ needs runtime environment variables.
 The command:
 
 - lists Docker Sandboxes for the current workspace and asks which one to use
+- offers to create a new sandbox from the same selection menu
 - compares `.env` with `proxy-secrets.env`, `runtime.env`, and `sandbox-secrets.toml`
 - asks before updating generated files when `.env` diverges
 - reapplies Docker Sandbox service/custom/registry secrets for the selected sandbox
@@ -88,10 +88,10 @@ The command:
 Only `runtime.env` values are written into the sandbox. `proxy-secrets.env`
 remains host-side.
 
-Use `start-docker-sandbox --create` to create a new sandbox before applying the
-saved config. In a Git repository, creation defaults to `sbx create --clone`
-using the Git root as the sandbox workspace, even when the command is run from a
-nested app directory.
+When you choose the create option, `start-docker-sandbox` creates the sandbox
+before applying the saved config. In a Git repository, creation defaults to
+`sbx create --clone` using the Git root as the sandbox workspace, even when the
+command is run from a nested app directory.
 
 ## Agent Skill
 

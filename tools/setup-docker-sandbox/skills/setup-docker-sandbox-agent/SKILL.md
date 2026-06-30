@@ -90,16 +90,16 @@ Use `start-docker-sandbox` when the user wants to start or attach to the agent s
 start-docker-sandbox
 ```
 
-The command selects a sandbox for the current workspace, detects divergence between `.env` and generated files, asks before updating generated files, reapplies Docker Sandbox service/custom/registry secrets, writes only `runtime.env` values into a managed block in `/etc/sandbox-persistent.sh`, then runs `sbx run --name <sandbox>`.
+The command lists sandboxes for the current workspace and includes an option to
+create a new sandbox from the same menu. It detects divergence between `.env`
+and generated files, asks before updating generated files, reapplies Docker
+Sandbox service/custom/registry secrets, writes only `runtime.env` values into a
+managed block in `/etc/sandbox-persistent.sh`, then runs
+`sbx run --name <sandbox>`.
 
-When the user needs a new Docker Sandbox from saved config, use:
-
-```bash
-start-docker-sandbox --create
-```
-
-In a Git repository, creation defaults to clone mode from the Git root, even if
-the CLI is run from a nested project directory such as `app/`.
+When the create option is selected in a Git repository, creation defaults to
+clone mode from the Git root, even if the CLI is run from a nested project
+directory such as `app/`.
 
 Do not manually pass `proxy-secrets.env` into the sandbox. It is host-only.
 

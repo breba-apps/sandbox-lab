@@ -38,6 +38,38 @@ setup-docker-sandbox
 start-docker-sandbox
 ```
 
+## Sandbox Decision Tree
+
+```mermaid
+flowchart TD
+    A[Sandboxed agent security model] --> B{Protect host machine?}
+
+    B -->|No| C[Run directly<br/>Lowest isolation]
+    B -->|Yes| D[Use a sandbox]
+
+    D --> E{Need local directory access?}
+
+    E -->|Yes| F[Local sandbox + mounted volume]
+    F --> F1[Best fit: Docker sandbox]
+    F1 --> F2[Agent edits local files]
+
+    E -->|No| G[Agent clones repo into sandbox]
+    G --> H{Need SigV4 credentials?}
+
+    H -->|Yes| I[Use Cloudflare sandbox]
+    I --> I1[Required for SigV4 credential use]
+
+    H -->|No| J{Run sandbox locally or in cloud?}
+
+    J -->|Local| K[Local sandbox, no mounts]
+    K --> K1[Docker or Cloudflare sandbox]
+
+    J -->|Cloud| L[Cloud sandbox]
+    L --> L1[Docker or Cloudflare sandbox]
+    L1 --> L2[Maximum protection]
+    L2 --> L3[Works while your computer is off]
+```
+
 ## Sample App
 
 The sample app is documented in [app/README.md](app/README.md). Its local

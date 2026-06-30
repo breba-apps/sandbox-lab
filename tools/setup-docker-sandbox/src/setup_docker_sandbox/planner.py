@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import fnmatch
 from pathlib import Path
 
 from setup_docker_sandbox.envfiles import load_env_file
 from setup_docker_sandbox.envfiles import write_env_file
 from setup_docker_sandbox.manifest import load_manifest, write_manifest
 from setup_docker_sandbox.models import Decision, EnvEntry, Mode
+
+GENERATED_LOCAL_FILES = ("proxy-secrets.env", "runtime.env", "sandbox-secrets.toml")
 
 
 def proxy_secret_entries(decisions: list[Decision]) -> list[EnvEntry]:
@@ -99,26 +102,44 @@ def merge_existing_decision(
 
 
 def gitignore_covers_generated_env(root: Path) -> bool:
+    return not missing_generated_gitignore_entries(root)
+
+
+def gitignore_pattern_matches(filename: str, pattern: str) -> bool:
+    return pattern == filename or fnmatch.fnmatchcase(filename, pattern)
+
+
+def missing_generated_gitignore_entries(root: Path) -> list[str]:
     gitignore = root / ".gitignore"
     if not gitignore.exists():
-        return False
+        return list(GENERATED_LOCAL_FILES)
     lines = [
         line.strip()
         for line in gitignore.read_text(encoding="utf-8").splitlines()
         if line.strip() and not line.lstrip().startswith("#")
     ]
-    return any(line in {"proxy-secrets.env", "runtime.env", "*.env", ".env.*", "*.local"} for line in lines)
+    return [
+        filename
+        for filename in GENERATED_LOCAL_FILES
+        if not any(gitignore_pattern_matches(filename, line) for line in lines)
+    ]
 
 
 def append_generated_env_to_gitignore(root: Path, *, dry_run: bool) -> str:
     gitignore = root / ".gitignore"
+    missing = missing_generated_gitignore_entries(root)
+    if not missing:
+        return f"{gitignore} already covers generated sandbox files"
+
+    rendered = ", ".join(missing)
     if dry_run:
-        return f"dry-run: append proxy-secrets.env and runtime.env to {gitignore}"
+        return f"dry-run: append {rendered} to {gitignore}"
 
     existing = ""
     if gitignore.exists():
         existing = gitignore.read_text(encoding="utf-8")
 
     prefix = "" if not existing or existing.endswith("\n") else "\n"
-    gitignore.write_text(f"{existing}{prefix}proxy-secrets.env\nruntime.env\n", encoding="utf-8")
-    return f"append proxy-secrets.env and runtime.env to {gitignore}"
+    additions = "\n".join(missing)
+    gitignore.write_text(f"{existing}{prefix}{additions}\n", encoding="utf-8")
+    return f"append {rendered} to {gitignore}"

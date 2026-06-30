@@ -51,6 +51,9 @@ The tool writes:
 - `sandbox-secrets.toml`: non-secret setup decisions for repeatable future runs.
   Sandbox-scoped decisions are intentionally not bound to one sandbox name.
 
+If these generated files are not already covered by `.gitignore`,
+`setup-docker-sandbox` appends the missing entries automatically.
+
 `proxy-secrets.env` contains real secrets and must be treated like `.env`. Do not
 pass it to `sbx exec --env-file`; those values should stay host-side. If you
 need runtime env for a process, use `runtime.env` and only after confirming every

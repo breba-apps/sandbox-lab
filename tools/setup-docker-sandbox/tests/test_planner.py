@@ -7,6 +7,7 @@ from setup_docker_sandbox.planner import (
     gitignore_covers_generated_env,
     load_existing_decisions,
     merge_existing_decision,
+    missing_generated_gitignore_entries,
     proxy_secret_entries,
     runtime_entries,
     write_outputs,
@@ -189,18 +190,26 @@ def test_merge_existing_decision_updates_value_and_current_sandbox() -> None:
 
 
 def test_gitignore_covers_generated_env_for_env_globs(tmp_path: Path) -> None:
-    (tmp_path / ".gitignore").write_text(".env\n.env.*\n", encoding="utf-8")
+    (tmp_path / ".gitignore").write_text("*.env\nsandbox-secrets.toml\n", encoding="utf-8")
 
     assert gitignore_covers_generated_env(tmp_path)
 
 
+def test_gitignore_reports_only_missing_generated_files(tmp_path: Path) -> None:
+    (tmp_path / ".gitignore").write_text("*.env\n", encoding="utf-8")
+
+    assert missing_generated_gitignore_entries(tmp_path) == ["sandbox-secrets.toml"]
+
+
 def test_append_generated_env_to_gitignore(tmp_path: Path) -> None:
-    (tmp_path / ".gitignore").write_text("# secrets\n", encoding="utf-8")
+    (tmp_path / ".gitignore").write_text("# secrets\nproxy-secrets.env\n", encoding="utf-8")
 
     message = append_generated_env_to_gitignore(tmp_path, dry_run=False)
 
-    assert "append proxy-secrets.env and runtime.env" in message
-    assert (tmp_path / ".gitignore").read_text(encoding="utf-8") == "# secrets\nproxy-secrets.env\nruntime.env\n"
+    assert "append runtime.env, sandbox-secrets.toml" in message
+    assert (
+        tmp_path / ".gitignore"
+    ).read_text(encoding="utf-8") == "# secrets\nproxy-secrets.env\nruntime.env\nsandbox-secrets.toml\n"
 
 
 def test_append_generated_env_to_gitignore_dry_run(tmp_path: Path) -> None:

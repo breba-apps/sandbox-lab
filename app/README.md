@@ -111,5 +111,8 @@ The generated files are:
 | `runtime.env` | Values intentionally written into the sandbox runtime environment |
 | `sandbox-secrets.toml` | Non-secret setup decisions for repeatable runs |
 
+`setup-docker-sandbox` automatically adds missing entries for these generated
+files to this directory's `.gitignore`.
+
 Do not pass `proxy-secrets.env` into sandbox processes. It is host-only and may
 contain real secret values.

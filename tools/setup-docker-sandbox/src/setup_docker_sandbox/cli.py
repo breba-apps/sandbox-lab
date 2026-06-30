@@ -221,9 +221,7 @@ def main(argv: list[str] | None = None) -> int:
         print_decision(decision)
 
     if not gitignore_covers_generated_env(root):
-        print("Warning: proxy-secrets.env/runtime.env do not appear to be covered by .gitignore.")
-        if prompt("Append proxy-secrets.env and runtime.env to .gitignore?", default="y").lower() in {"y", "yes"}:
-            print(append_generated_env_to_gitignore(root, dry_run=args.dry_run))
+        print(append_generated_env_to_gitignore(root, dry_run=args.dry_run))
 
     for message in write_outputs(root, decisions, dry_run=args.dry_run):
         print(message)

@@ -15,6 +15,7 @@ wheels/
 !.env.example
 proxy-secrets.env
 runtime.env
+sandbox-secrets.toml
 safe.env
 unsafe.env
 

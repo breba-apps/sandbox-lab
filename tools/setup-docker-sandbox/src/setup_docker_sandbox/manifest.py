@@ -29,8 +29,6 @@ def write_manifest(path: Path, decisions: list[Decision]) -> None:
                 f"scope = {toml_string(decision.scope.value)}",
             ]
         )
-        if decision.sandbox_name:
-            lines.append(f"sandbox_name = {toml_string(decision.sandbox_name)}")
         if decision.service:
             lines.append(f"service = {toml_string(decision.service)}")
         if decision.host:
@@ -74,7 +72,7 @@ def load_manifest(path: Path) -> dict[str, Decision]:
             value="",
             mode=parsed_mode,
             scope=parsed_scope,
-            sandbox_name=item.get("sandbox_name"),
+            sandbox_name=None,
             service=item.get("service"),
             host=item.get("host"),
             registry=item.get("registry"),

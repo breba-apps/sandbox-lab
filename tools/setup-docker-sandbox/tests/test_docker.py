@@ -117,6 +117,7 @@ def test_run_docker_commands_runs_custom_secret_without_argv_secret(monkeypatch)
                 "API_KEY",
                 "super-secret",
                 Mode.CUSTOM_SECRET,
+                sandbox_name="demo",
                 host="api.example.com",
             )
         ],
@@ -136,6 +137,7 @@ def test_run_docker_commands_dry_run_redacts_secrets() -> None:
                 "API_KEY",
                 "super-secret",
                 Mode.CUSTOM_SECRET,
+                sandbox_name="demo",
                 host="api.example.com",
             )
         ],
@@ -159,6 +161,7 @@ def test_run_docker_commands_failure_redacts_secret_argv(monkeypatch) -> None:
                 "API_KEY",
                 "super-secret",
                 Mode.CUSTOM_SECRET,
+                sandbox_name="demo",
                 host="api.example.com",
             )
         ],

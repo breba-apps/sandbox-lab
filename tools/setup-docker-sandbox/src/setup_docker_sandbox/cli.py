@@ -206,8 +206,6 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     default_scope, sandbox_name = prompt_scope()
-    if default_scope is Scope.SANDBOX and sandbox_name is None:
-        return 2
     existing_decisions = load_existing_decisions(root)
     if existing_decisions:
         print(f"Reusing saved decisions for {len(existing_decisions)} variable(s).")

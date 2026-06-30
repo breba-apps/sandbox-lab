@@ -76,6 +76,7 @@ def test_write_outputs_writes_repeatability_files(tmp_path: Path) -> None:
     manifest = (tmp_path / "sandbox-secrets.toml").read_text(encoding="utf-8")
     assert 'name = "API_KEY"' in manifest
     assert 'host = "api.example.com"' in manifest
+    assert "sandbox_name" not in manifest
     assert "actual-api-token" not in manifest
 
 
@@ -120,6 +121,7 @@ def test_load_manifest_reads_non_secret_decisions(tmp_path: Path) -> None:
     assert decisions["OPENAI_API_KEY"].value == ""
     assert decisions["OPENAI_API_KEY"].mode is Mode.SERVICE_SECRET
     assert decisions["OPENAI_API_KEY"].service == "openai"
+    assert decisions["OPENAI_API_KEY"].sandbox_name is None
 
 
 def test_load_existing_decisions_combines_manifest_and_env_values(tmp_path: Path) -> None:

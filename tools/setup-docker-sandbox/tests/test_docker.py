@@ -253,7 +253,10 @@ def test_sandbox_workspace_supports_deep_workspace_shape() -> None:
 
 
 def test_workspace_matches_path_or_basename(tmp_path: Path) -> None:
+    child = tmp_path / "app"
+    child.mkdir()
     assert workspace_matches(str(tmp_path), tmp_path)
+    assert workspace_matches(str(tmp_path), child)
     assert workspace_matches(tmp_path.name, tmp_path)
     assert not workspace_matches("other", tmp_path)
 

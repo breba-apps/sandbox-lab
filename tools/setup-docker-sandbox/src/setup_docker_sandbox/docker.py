@@ -121,7 +121,10 @@ def workspace_matches(workspace: str, root: Path) -> bool:
 
     workspace_path = Path(normalized_workspace).expanduser()
     try:
-        if workspace_path.resolve() == resolved_root:
+        resolved_workspace = workspace_path.resolve()
+        if resolved_workspace == resolved_root:
+            return True
+        if resolved_root.is_relative_to(resolved_workspace):
             return True
     except OSError:
         pass

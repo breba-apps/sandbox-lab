@@ -4,11 +4,13 @@ import subprocess
 from setup_docker_sandbox.docker import (
     apply_persistent_runtime_env,
     build_docker_command,
+    build_policy_command,
     create_sandbox,
     default_sandbox_workspace,
     parse_sandbox_json,
     parse_sandbox_list,
     run_docker_commands,
+    run_policy_commands,
     run_sandbox,
     sandbox_workspace,
     workspace_matches,
@@ -102,6 +104,118 @@ def test_registry_secret_uses_stdin() -> None:
         "--username",
         "octocat",
     ]
+
+
+def test_build_policy_command_allows_network_for_sandbox() -> None:
+    command = build_policy_command(
+        Decision(
+            "DATABASE_URL",
+            "secret-url",
+            Mode.UNSAFE_RUNTIME,
+            scope=Scope.SANDBOX,
+            sandbox_name="demo",
+            network_url="db.example.com:443",
+        )
+    )
+
+    assert command is not None
+    assert command.stdin_secret is None
+    assert command.argv == [
+        "sbx",
+        "policy",
+        "allow",
+        "network",
+        "db.example.com:443",
+        "--sandbox",
+        "demo",
+    ]
+
+
+def test_build_policy_command_none_without_network_url() -> None:
+    assert (
+        build_policy_command(
+            Decision(
+                "DATABASE_URL",
+                "secret-url",
+                Mode.UNSAFE_RUNTIME,
+                scope=Scope.SANDBOX,
+                sandbox_name="demo",
+            )
+        )
+        is None
+    )
+
+
+def test_build_policy_command_none_without_sandbox_name() -> None:
+    assert (
+        build_policy_command(
+            Decision(
+                "DATABASE_URL",
+                "secret-url",
+                Mode.UNSAFE_RUNTIME,
+                scope=Scope.SANDBOX,
+                network_url="db.example.com",
+            )
+        )
+        is None
+    )
+
+
+def test_run_policy_commands_runs_allow_network(monkeypatch) -> None:
+    calls = []
+
+    def fake_run(*args, **kwargs):
+        calls.append((args, kwargs))
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    messages = run_policy_commands(
+        [
+            Decision(
+                "DATABASE_URL",
+                "secret-url",
+                Mode.UNSAFE_RUNTIME,
+                scope=Scope.SANDBOX,
+                sandbox_name="demo",
+                network_url="db.example.com",
+            )
+        ],
+        dry_run=False,
+    )
+
+    assert messages == ["ran: sbx policy allow network db.example.com --sandbox demo"]
+    assert calls[0][0][0] == [
+        "sbx",
+        "policy",
+        "allow",
+        "network",
+        "db.example.com",
+        "--sandbox",
+        "demo",
+    ]
+
+
+def test_run_policy_commands_dry_run_does_not_run(monkeypatch) -> None:
+    def fake_run(*args, **kwargs):
+        raise AssertionError("subprocess should not run")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    messages = run_policy_commands(
+        [
+            Decision(
+                "DATABASE_URL",
+                "secret-url",
+                Mode.UNSAFE_RUNTIME,
+                scope=Scope.SANDBOX,
+                sandbox_name="demo",
+                network_url="db.example.com",
+            )
+        ],
+        dry_run=True,
+    )
+
+    assert messages == ["dry-run: sbx policy allow network db.example.com --sandbox demo"]
 
 
 def test_run_docker_commands_runs_custom_secret_without_argv_secret(monkeypatch) -> None:

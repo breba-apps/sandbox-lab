@@ -78,6 +78,7 @@ def load_existing_decisions(directory: Path) -> dict[str, Decision]:
             host=decision.host,
             registry=decision.registry,
             username=decision.username,
+            network_url=decision.network_url,
         )
     return decisions
 
@@ -98,6 +99,7 @@ def merge_existing_decision(
         host=existing.host,
         registry=existing.registry,
         username=existing.username,
+        network_url=existing.network_url,
     )
 
 

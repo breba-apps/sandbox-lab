@@ -43,7 +43,9 @@ uv tool install --reinstall ./tools/setup-docker-sandbox
 setup-docker-sandbox
 ```
 
-Do not expect a final plan screen. The CLI asks questions while it runs, records the answer for each variable, writes `proxy-secrets.env` / `runtime.env` / `sandbox-secrets.toml`, and runs supported global or host-side `sbx secret` commands. Sandbox-scoped Docker secret commands are applied by `start-docker-sandbox` after a concrete sandbox is selected or created.
+Do not expect a final plan screen. The CLI asks questions while it runs, records the answer for each variable, writes `proxy-secrets.env` / `runtime.env` / `sandbox-secrets.toml`, and runs supported global or host-side `sbx secret` commands. Sandbox-scoped Docker secret commands and `sbx policy allow network` calls are applied by `start-docker-sandbox` after a concrete sandbox is selected or created.
+
+For `custom egress secret` and `unsafe runtime secret`, the CLI also asks which network egress URL to allow. Answer with a `host` or `host:port`, choose a number to reuse a URL already allowed in this run, or leave it blank to skip when the secret needs no egress allowance. Recorded URLs become `sbx policy allow network <host> --sandbox <sandbox>` at start time. Do not append a default port; omitting the port allows the standard HTTPS port.
 
 On later runs, the CLI reuses existing decisions from `sandbox-secrets.toml` and values from `proxy-secrets.env` / `runtime.env`; it only asks about new `.env` variables and rewrites generated env files. Agents should still inspect new variables before answering.
 
@@ -64,6 +66,7 @@ For prompt answers:
 - variable handling: `s`, `b`, `c`, `u`, `r`, or `k`
 - built-in service: service name or number from the CLI list
 - custom egress host: the exact outbound host, such as `api.example.com`
+- network egress URL: a `host` or `host:port` to allow, a number to reuse an allowed URL, or blank to skip
 - registry host: the exact registry host, such as `ghcr.io`
 - registry username: only if required
 

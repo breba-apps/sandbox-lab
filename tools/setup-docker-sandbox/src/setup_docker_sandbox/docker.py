@@ -333,6 +333,54 @@ def build_docker_command(decision: Decision) -> DockerCommand | None:
     return None
 
 
+def build_policy_command(decision: Decision) -> DockerCommand | None:
+    if not decision.network_url:
+        return None
+    if decision.scope is not Scope.SANDBOX or not decision.sandbox_name:
+        return None
+    return DockerCommand(
+        argv=[
+            "sbx",
+            "policy",
+            "allow",
+            "network",
+            decision.network_url,
+            "--sandbox",
+            decision.sandbox_name,
+        ],
+    )
+
+
+def run_policy_commands(
+    decisions: list[Decision],
+    *,
+    dry_run: bool,
+) -> list[str]:
+    messages: list[str] = []
+    for decision in decisions:
+        command = build_policy_command(decision)
+        if command is None:
+            continue
+
+        printable = " ".join(command.argv)
+        if dry_run:
+            messages.append(f"dry-run: {printable}")
+            continue
+
+        try:
+            subprocess.run(
+                command.argv,
+                text=True,
+                check=True,
+                capture_output=True,
+            )
+        except subprocess.CalledProcessError as exc:
+            messages.append(f"failed: {printable} exited with status {exc.returncode}")
+            continue
+        messages.append(f"ran: {printable}")
+    return messages
+
+
 def run_docker_commands(
     decisions: list[Decision],
     *,

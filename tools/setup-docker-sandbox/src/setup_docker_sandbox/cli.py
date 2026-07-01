@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from collections.abc import Iterable
 from pathlib import Path
 
 from setup_docker_sandbox.docker import (
@@ -98,7 +99,51 @@ def prompt_scope() -> tuple[Scope, str | None]:
     return Scope.SANDBOX, None
 
 
-def decision_for_entry(entry: EnvEntry, default_scope: Scope, sandbox_name: str | None) -> Decision:
+def normalize_network_url(raw: str) -> str | None:
+    value = raw.strip()
+    if not value:
+        return None
+    if "://" in value:
+        value = value.split("://", 1)[1]
+    value = value.split("/", 1)[0].strip()
+    return value or None
+
+
+def collect_allowed_urls(decisions: Iterable[Decision]) -> list[str]:
+    urls: list[str] = []
+    for decision in decisions:
+        if decision.network_url and decision.network_url not in urls:
+            urls.append(decision.network_url)
+    return urls
+
+
+def prompt_network_url(allowed: list[str], *, suggestion: str | None = None) -> str | None:
+    print("Network egress URL to allow for this secret (host or host:port).")
+    print("Leave blank to skip if this secret needs no egress allowance.")
+    if allowed:
+        print("Already-allowed URLs:")
+        for index, url in enumerate(allowed, start=1):
+            print(f"  {index}) {url}")
+        print("Enter a number to reuse one, or type a new host.")
+    hint = f", e.g. {suggestion}" if suggestion else ""
+    raw = prompt(f"Allow network egress for{hint}")
+    if not raw:
+        return None
+    if allowed and raw.isdigit():
+        index = int(raw)
+        if 1 <= index <= len(allowed):
+            return allowed[index - 1]
+    return normalize_network_url(raw)
+
+
+def decision_for_entry(
+    entry: EnvEntry,
+    default_scope: Scope,
+    sandbox_name: str | None,
+    *,
+    allowed_urls: list[str] | None = None,
+) -> Decision:
+    allowed_urls = allowed_urls if allowed_urls is not None else []
     print(f"\nVariable: {entry.name}")
     answer = prompt_choice(
         "How should this value be handled?",
@@ -127,6 +172,7 @@ def decision_for_entry(entry: EnvEntry, default_scope: Scope, sandbox_name: str 
         )
     if answer == "c":
         host = prompt("Destination host for custom proxy injection, e.g. api.example.com")
+        network_url = prompt_network_url(allowed_urls, suggestion=host)
         return Decision(
             entry.name,
             entry.value,
@@ -134,6 +180,7 @@ def decision_for_entry(entry: EnvEntry, default_scope: Scope, sandbox_name: str 
             scope=default_scope,
             sandbox_name=sandbox_name,
             host=host,
+            network_url=network_url,
         )
     if answer == "r":
         registry = prompt("Registry host, e.g. ghcr.io")
@@ -149,12 +196,14 @@ def decision_for_entry(entry: EnvEntry, default_scope: Scope, sandbox_name: str 
         )
     if answer == "k":
         return Decision(entry.name, entry.value, Mode.SKIP)
+    network_url = prompt_network_url(allowed_urls)
     return Decision(
         entry.name,
         entry.value,
         Mode.UNSAFE_RUNTIME,
         scope=default_scope,
         sandbox_name=sandbox_name,
+        network_url=network_url,
     )
 
 
@@ -179,13 +228,22 @@ def print_decision(decision: Decision) -> None:
     elif decision.mode is Mode.SERVICE_SECRET:
         print(f"{decision.name}: built-in service secret for {decision.service}, scope={decision.scope.value}")
     elif decision.mode is Mode.CUSTOM_SECRET:
-        print(f"{decision.name}: custom egress secret for {decision.host}, scope={decision.scope.value}")
+        print(
+            f"{decision.name}: custom egress secret for {decision.host}, "
+            f"scope={decision.scope.value}{network_note(decision)}"
+        )
     elif decision.mode is Mode.REGISTRY_SECRET:
         print(f"{decision.name}: registry credential for {decision.registry}, scope={decision.scope.value}")
     elif decision.mode is Mode.SAFE_ENV:
         print(f"{decision.name}: runtime.env safe value")
     else:
-        print(f"{decision.name}: runtime.env secret value")
+        print(f"{decision.name}: runtime.env secret value{network_note(decision)}")
+
+
+def network_note(decision: Decision) -> str:
+    if decision.network_url:
+        return f", allow network {decision.network_url}"
+    return ""
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -210,14 +268,17 @@ def main(argv: list[str] | None = None) -> int:
     if existing_decisions:
         print(f"Reusing saved decisions for {len(existing_decisions)} variable(s).")
 
+    allowed_urls = collect_allowed_urls(existing_decisions.values())
     decisions = []
     for entry in entries:
         existing = existing_decisions.get(entry.name)
         if existing is not None:
             decision = merge_existing_decision(entry, existing, sandbox_name=sandbox_name)
         else:
-            decision = decision_for_entry(entry, default_scope, sandbox_name)
+            decision = decision_for_entry(entry, default_scope, sandbox_name, allowed_urls=allowed_urls)
         decisions.append(decision)
+        if decision.network_url and decision.network_url not in allowed_urls:
+            allowed_urls.append(decision.network_url)
         print_decision(decision)
 
     if not gitignore_covers_generated_env(root):

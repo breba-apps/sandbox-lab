@@ -37,6 +37,8 @@ def write_manifest(path: Path, decisions: list[Decision]) -> None:
             lines.append(f"registry = {toml_string(decision.registry)}")
         if decision.username:
             lines.append(f"username = {toml_string(decision.username)}")
+        if decision.network_url:
+            lines.append(f"network_url = {toml_string(decision.network_url)}")
         lines.append("")
 
     path.write_text("\n".join(lines), encoding="utf-8")
@@ -77,5 +79,6 @@ def load_manifest(path: Path) -> dict[str, Decision]:
             host=item.get("host"),
             registry=item.get("registry"),
             username=item.get("username"),
+            network_url=item.get("network_url"),
         )
     return decisions

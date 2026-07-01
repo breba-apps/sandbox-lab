@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from setup_docker_sandbox.cli import (
+    collect_allowed_urls,
     decision_for_entry,
     print_decision,
     prompt,
@@ -17,6 +18,7 @@ from setup_docker_sandbox.docker import (
     apply_persistent_runtime_env,
     list_sandboxes_result,
     run_docker_commands,
+    run_policy_commands,
     run_sandbox,
     sbx_available,
 )
@@ -97,13 +99,16 @@ def reconcile_decisions(
     sandbox_name: str | None,
 ) -> list[Decision]:
     decisions: list[Decision] = []
+    allowed_urls = collect_allowed_urls(existing_decisions.values())
     for entry in entries:
         existing = existing_decisions.get(entry.name)
         if existing is not None:
             decision = merge_existing_decision(entry, existing, sandbox_name=sandbox_name)
         else:
-            decision = decision_for_entry(entry, scope, sandbox_name)
+            decision = decision_for_entry(entry, scope, sandbox_name, allowed_urls=allowed_urls)
         decisions.append(decision)
+        if decision.network_url and decision.network_url not in allowed_urls:
+            allowed_urls.append(decision.network_url)
         print_decision(decision)
     return decisions
 
@@ -224,6 +229,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     for message in run_docker_commands(decisions, dry_run=args.dry_run):
+        print(message)
+
+    for message in run_policy_commands(decisions, dry_run=args.dry_run):
         print(message)
 
     runtime = runtime_entries(decisions)

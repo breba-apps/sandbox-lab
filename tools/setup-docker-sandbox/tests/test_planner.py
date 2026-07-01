@@ -125,6 +125,26 @@ def test_load_manifest_reads_non_secret_decisions(tmp_path: Path) -> None:
     assert decisions["OPENAI_API_KEY"].sandbox_name is None
 
 
+def test_manifest_round_trips_network_url(tmp_path: Path) -> None:
+    manifest = tmp_path / "sandbox-secrets.toml"
+    write_manifest(
+        manifest,
+        [
+            Decision(
+                "DATABASE_URL",
+                "secret-url",
+                Mode.UNSAFE_RUNTIME,
+                scope=Scope.SANDBOX,
+                network_url="db.example.com:443",
+            )
+        ],
+    )
+
+    decisions = load_manifest(manifest)
+
+    assert decisions["DATABASE_URL"].network_url == "db.example.com:443"
+
+
 def test_load_existing_decisions_combines_manifest_and_env_values(tmp_path: Path) -> None:
     write_outputs(
         tmp_path,

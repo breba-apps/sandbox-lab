@@ -7,6 +7,11 @@ The tool does not assume variable names. For each `.env` entry it asks whether t
 value is safe runtime configuration, a built-in service secret, a custom egress
 secret, an unsafe runtime secret, a registry credential, or should be skipped.
 
+For custom egress and unsafe runtime secrets it also asks which network egress URL
+to allow. Enter a new `host` or `host:port`, reuse one already allowed in this run,
+or leave it blank to skip. Recorded URLs are applied at start time with
+`sbx policy allow network <host> --sandbox <sandbox>`.
+
 ## Install
 
 From this repository:
@@ -83,6 +88,8 @@ The command:
 - compares `.env` with `proxy-secrets.env`, `runtime.env`, and `sandbox-secrets.toml`
 - asks before updating generated files when `.env` diverges
 - reapplies Docker Sandbox service/custom/registry secrets for the selected sandbox
+- runs `sbx policy allow network <host> --sandbox <sandbox>` for any custom egress
+  or unsafe runtime secret that recorded an egress URL
 - writes `runtime.env` values into a managed block in `/etc/sandbox-persistent.sh`
 - starts or attaches with `sbx run --name <sandbox>`
 

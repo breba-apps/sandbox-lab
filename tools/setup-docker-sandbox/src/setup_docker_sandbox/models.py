@@ -36,6 +36,7 @@ class Decision:
     host: str | None = None
     registry: str | None = None
     username: str | None = None
+    network_url: str | None = None
 
 
 @dataclass(frozen=True)

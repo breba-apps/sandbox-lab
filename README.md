@@ -14,12 +14,14 @@ live under `tools/`.
 | `app/` | Sample FastAPI application, app-specific configuration, tests, and app README |
 | `app/src/app/` | Sample app source code |
 | `tools/setup-docker-sandbox/` | Reusable Docker Sandbox setup/start CLI package |
-| `tools/` | Home for additional sandbox tools as they are added |
+| `tools/cloudflare-sandbox/` | Reusable Cloudflare Sandbox setup/start tool and Worker service |
+| `tools/` | Home for sandbox tools |
 
 ## Current Sandbox Model
 
-The Docker Sandbox workflow separates host-side setup from runtime-visible app
-configuration:
+The sandbox workflows separate host-side setup from runtime-visible app
+configuration. Docker and Cloudflare have different runtimes, but they should
+share the same setup intent:
 
 - Run app-specific setup from the app directory that owns `.env`.
 - Keep proxy-managed or registry secret material host-side in `proxy-secrets.env`.
@@ -57,6 +59,31 @@ Do not pass `proxy-secrets.env` into sandbox processes. It is host-only and may
 contain real secret values. `start-docker-sandbox` prepares Docker Sandbox
 secrets and runtime environment, but it does not manage the app's `.env`; the
 app runner or sandbox agent follows the app's own `.env.example` guidance.
+
+The Cloudflare Sandbox workflow uses the same app-owned setup boundary with
+Cloudflare-specific generated files:
+
+```bash
+cd app
+setup-cloudflare-sandbox
+cf-sandbox-service   # run from another terminal
+start-cloudflare-sandbox
+```
+
+Generated Cloudflare Sandbox files for the sample app also live under `app/`:
+
+| File | Purpose |
+| --- | --- |
+| `cloudflare-runtime.env` | Values intentionally visible to the Cloudflare Sandbox container |
+| `cloudflare-proxy-secrets.env` | Host-side values written to the local Worker `.dev.vars`; not passed into the container |
+| `cloudflare-sandbox.toml` | Non-secret setup decisions for repeatable Cloudflare runs |
+
+`cf-sandbox-service` runs the local Wrangler Worker service. Keep it running in
+one terminal. `start-cloudflare-sandbox` requires that service to already be
+reachable, then prepares/reuses a Cloudflare Sandbox session, checks out the
+repository into `/workspace`, and attaches locally with `docker exec`.
+Worker-side proxy and signing secrets are represented inside the container by
+placeholders.
 
 ## Sandbox Decision Tree
 
@@ -108,18 +135,22 @@ uv run pytest
 
 The Docker Sandbox setup tool is documented in
 [tools/setup-docker-sandbox/README.md](tools/setup-docker-sandbox/README.md).
+The Cloudflare Sandbox tool is documented in
+[tools/cloudflare-sandbox/README.md](tools/cloudflare-sandbox/README.md).
 
 Install it as a local CLI tool:
 
 ```bash
 uv tool install ./tools/setup-docker-sandbox
+npm install -g ./tools/cloudflare-sandbox
 ```
 
 Reinstall after tool source changes:
 
 ```bash
 uv tool install --reinstall ./tools/setup-docker-sandbox
+npm install -g ./tools/cloudflare-sandbox
 ```
 
-Future sandbox tools, including possible Cloudflare Sandbox helpers, should be
-added under `tools/` and documented independently.
+Future sandbox tools should be added under `tools/` and documented
+independently.

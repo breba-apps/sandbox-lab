@@ -25,3 +25,5 @@ unsafe.env
 
 # IDE
 .idea
+.DS_Store
+.wrangler

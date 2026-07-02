@@ -1,3 +1,6 @@
 proxy-secrets.env
 runtime.env
 sandbox-secrets.toml
+cloudflare-runtime.env
+cloudflare-proxy-secrets.env
+cloudflare-sandbox.toml

@@ -70,7 +70,8 @@ test('docker exec args pass proxy egress env and can run without a TTY', () => {
 
   assert.deepEqual(args.slice(0, 2), ['exec', '-i']);
   assert.ok(!args.includes('-it'));
-  assert.deepEqual(args.slice(2, 8), [
+  assert.deepEqual(args.slice(2, 6), ['--user', 'appuser', '--workdir', '/workspace']);
+  assert.deepEqual(args.slice(6, 12), [
     '-e',
     'OPENAI_API_KEY=proxy-injected',
     '-e',
@@ -78,8 +79,8 @@ test('docker exec args pass proxy egress env and can run without a TTY', () => {
     '-e',
     'ANTHROPIC_BASE_URL=http://api.anthropic.com'
   ]);
-  assert.equal(args[8], 'container123');
-  assert.deepEqual(args.slice(9), command);
+  assert.equal(args[12], 'container123');
+  assert.deepEqual(args.slice(13), command);
 });
 
 test('docker exec args default to interactive TTY mode', () => {

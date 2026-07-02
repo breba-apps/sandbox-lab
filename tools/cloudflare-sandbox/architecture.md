@@ -5,7 +5,10 @@ This project runs AI coding agents inside Cloudflare Sandbox containers behind a
 ## System Boundaries
 
 - **Worker (`src/index.ts`)**: HTTP/WebSocket entrypoint, Sandbox Durable Object lookup, egress allowlist, browser bridge, agent startup endpoint.
-- **Sandbox container (`Dockerfile`)**: Runtime image with Codex and Claude CLIs installed. The container receives dummy credentials and provider base URLs only.
+- **Sandbox container (`Dockerfile`)**: Runtime image with Codex and Claude CLIs installed.
+  The container receives dummy credentials and provider base URLs only. The image creates
+  `appuser` for agent attach, while the Cloudflare Sandbox server keeps the base image
+  default user.
 - **Browser client (`public/index.html`)**: Single-page UI that speaks Codex app-server JSON-RPC through the Worker WebSocket bridge.
 - **Setup/start CLIs (`scripts/setup-cloudflare-sandbox.mjs`, `scripts/start-cloudflare-sandbox.mjs`)**: App-facing commands that generate Cloudflare runtime/proxy config, prepare a session, and attach locally.
 - **Service CLI (`scripts/cf-sandbox-service.mjs`)**: Runs the local Wrangler Worker service separately from session attach.
@@ -45,7 +48,7 @@ The agent startup endpoint is deployable and does not assume Docker. The current
 1. Parse CLI options.
 2. Call `POST /sandbox/<session>/start`.
 3. Find the matching local Wrangler container by reading `/tmp/sandbox-session-name`.
-4. Run `docker exec` with dummy provider env vars.
+4. Run `docker exec --user appuser --workdir /workspace` with dummy provider env vars.
 5. Bootstrap Codex or Claude credentials inside the container when needed.
 
 Future deployed clients should use the same startup endpoint and attach through a deployment-specific mechanism instead of local Docker.

@@ -143,6 +143,7 @@ test('--no-tty uses non-interactive docker exec args', async () => {
   const args = buildDockerExecArgs('abc123', ['echo', 'OK'], { tty: false });
 
   assert.deepEqual(args.slice(0, 2), ['exec', '-i']);
+  assert.deepEqual(args.slice(2, 6), ['--user', 'appuser', '--workdir', '/workspace']);
   assert.equal(args.includes('-it'), false);
   assert.deepEqual(args.slice(-2), ['echo', 'OK']);
 });

@@ -8,5 +8,11 @@ RUN apt-get update \
 # Install agent CLIs globally.
 RUN npm install -g @openai/codex @anthropic-ai/claude-code
 
+ENV COMMAND_TIMEOUT_MS=3600000
+
+# Local attach runs agent commands as this non-root user.
+RUN useradd -m -s /bin/bash appuser \
+  && chown -R appuser:appuser /workspace
+
 # Expose the WebSocket port used by codex app-server
 EXPOSE 4500

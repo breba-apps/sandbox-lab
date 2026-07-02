@@ -352,6 +352,8 @@ function buildDockerExecArgs(containerId, command, opts = {}) {
   return [
     'exec',
     tty ? '-it' : '-i',
+    '--user', 'appuser',
+    '--workdir', '/workspace',
     '-e', 'OPENAI_API_KEY=proxy-injected',
     '-e', 'OPENAI_BASE_URL=http://api.openai.com/v1',
     '-e', 'ANTHROPIC_BASE_URL=http://api.anthropic.com',

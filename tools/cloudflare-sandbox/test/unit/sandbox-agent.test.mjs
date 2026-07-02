@@ -253,6 +253,10 @@ test('buildDockerExecArgs builds interactive and non-interactive docker exec arg
     [
       'exec',
       '-it',
+      '--user',
+      'appuser',
+      '--workdir',
+      '/workspace',
       '-e',
       'OPENAI_API_KEY=proxy-injected',
       '-e',
@@ -269,6 +273,10 @@ test('buildDockerExecArgs builds interactive and non-interactive docker exec arg
     [
       'exec',
       '-i',
+      '--user',
+      'appuser',
+      '--workdir',
+      '/workspace',
       '-e',
       'OPENAI_API_KEY=proxy-injected',
       '-e',

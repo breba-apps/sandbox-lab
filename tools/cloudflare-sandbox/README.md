@@ -90,11 +90,11 @@ npm run scodex -- --repo https://github.com/org/repo
 The helper starts the sandbox through `POST /sandbox/<session>/start`. That
 endpoint is not tied to local development; it prepares the Sandbox without
 using the browser WebSocket bridge or starting `codex app-server`. This Node
-helper then attaches to the local Wrangler container with `docker exec`. A
-deployed client can use the same startup endpoint and attach through a
-deployment-specific mechanism. Existing sandbox state is reused until
-`SANDBOX_SLEEP_AFTER`; pass `--reset` to destroy and recreate the sandbox
-before attaching.
+helper then attaches to the local Wrangler container with `docker exec` as
+`appuser` in `/workspace`. A deployed client can use the same startup endpoint
+and attach through a deployment-specific mechanism. Existing sandbox state is
+reused until `SANDBOX_SLEEP_AFTER`; pass `--reset` to destroy and recreate the
+sandbox before attaching.
 
 For automation, pass `--no-tty` so the helper uses non-interactive
 `docker exec -i` instead of `docker exec -it`:
@@ -304,7 +304,7 @@ When deployed with `interceptHttps = true`, HTTPS requests to blocked hosts also
 
 ```
 codex-app-server/
-├── Dockerfile               cloudflare/sandbox:0.12.3-python + agent CLIs
+├── Dockerfile               cloudflare/sandbox:0.12.3-python + appuser + agent CLIs
 ├── wrangler.jsonc            Worker + Sandbox Durable Object + container config
 ├── .dev.vars.example         Environment variable template
 ├── architecture.md           Durable architecture context

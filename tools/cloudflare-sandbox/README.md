@@ -115,6 +115,12 @@ If `--repo` is omitted, the helper tries to use the current directory's
 receives only `ANTHROPIC_BASE_URL=http://api.anthropic.com` and a dummy
 credential; the Worker injects the real one when egressing to Anthropic.
 
+Claude and Codex are launched in full-permission mode because the Cloudflare
+Sandbox is the external security boundary:
+
+- Claude: `--dangerously-skip-permissions`
+- Codex: `--dangerously-bypass-approvals-and-sandbox`
+
 ## Deploy
 
 ```bash
@@ -226,7 +232,8 @@ The Sandbox subclass combines three layers of network control to minimize data e
 | `api.openai.com` | HTTP + HTTPS | Allowed — Worker injects `OPENAI_API_KEY` and upgrades to HTTPS    |
 | `api.anthropic.com` | HTTP + HTTPS | Allowed — Worker injects `CLAUDE_CODE_OAUTH_TOKEN` (Bearer) or `ANTHROPIC_API_KEY` (`x-api-key`) and upgrades to HTTPS |
 | `platform.claude.com` | HTTPS      | Allowed — Claude Code OAuth validation; Worker injects `CLAUDE_CODE_OAUTH_TOKEN` (Bearer) |
-| `github.com`     | HTTP + HTTPS | Allowed — upgrades to HTTPS (needed for `sandbox/setup` git clone) |
+| `github.com`     | HTTP + HTTPS | Allowed — upgrades to HTTPS (needed for `sandbox/setup` git clone), injects `GITHUB_TOKEN` when present |
+| Common coding hosts | HTTP + HTTPS | Allowed — GitHub assets, package registries, OS package mirrors, Docker registries, language toolchains, CDN hosts, and certificate validation hosts |
 | `*.r2.cloudflarestorage.com` | HTTP + HTTPS | Allowed only when generated config includes the host — Worker signs with R2 credentials using SigV4 |
 | Everything else  | HTTP + HTTPS | Blocked with `403 Forbidden`                                       |
 | Non-HTTP traffic | Raw TCP      | Blocked by `enableInternet = false` for non-allowed hosts          |
@@ -297,7 +304,7 @@ When deployed with `interceptHttps = true`, HTTPS requests to blocked hosts also
 
 ```
 codex-app-server/
-├── Dockerfile               cloudflare/sandbox:0.10.2 + @openai/codex CLI
+├── Dockerfile               cloudflare/sandbox:0.12.3-python + agent CLIs
 ├── wrangler.jsonc            Worker + Sandbox Durable Object + container config
 ├── .dev.vars.example         Environment variable template
 ├── architecture.md           Durable architecture context

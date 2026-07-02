@@ -27,7 +27,7 @@ export class Sandbox extends BaseSandbox<Env> {
 }
 
 declare global {
-interface Env {
+  interface Env {
     OPENAI_API_KEY?: string;
     ANTHROPIC_API_KEY?: string;
     CLAUDE_CODE_OAUTH_TOKEN?: string;
@@ -44,6 +44,124 @@ interface Env {
 const CODEX_WS_PORT = 4500;
 const SANDBOX_ID_RE = /^\/ws\/([a-zA-Z0-9_-]{1,64})$/;
 const AGENT_SANDBOX_START_RE = /^\/sandbox\/([a-zA-Z0-9_-]{1,64})\/start$/;
+
+const DEFAULT_ALLOWED_HOSTS = new Set([
+  'apache.org',
+  'apis.google.com',
+  'api.github.com',
+  'api.nuget.org',
+  'archive.ubuntu.com',
+  'astral.sh',
+  'auth.docker.io',
+  'bitbucket.org',
+  'bootstrap.pypa.io',
+  'bun.sh',
+  'cdn.jsdelivr.net',
+  'codeload.github.com',
+  'cocoapods.org',
+  'cpan.org',
+  'crates.io',
+  'deb.debian.org',
+  'debian.org',
+  'deno.land',
+  'dl-cdn.alpinelinux.org',
+  'docker.com',
+  'docker.io',
+  'download.docker.com',
+  'dot.net',
+  'dotnet.microsoft.com',
+  'eclipse.org',
+  'fastly.com',
+  'files.pythonhosted.org',
+  'gcr.io',
+  'getcomposer.org',
+  'ghcr.io',
+  'github.com',
+  'github-releases.githubusercontent.com',
+  'gitlab.com',
+  'golang.org',
+  'goproxy.io',
+  'gradle.org',
+  'hex.pm',
+  'index.crates.io',
+  'java.com',
+  'java.net',
+  'jsdelivr.net',
+  'maven.org',
+  'metacpan.org',
+  'nodejs.org',
+  'nodesource.com',
+  'npmjs.com',
+  'npmjs.org',
+  'nuget.org',
+  'objects.githubusercontent.com',
+  'packagist.com',
+  'packagist.org',
+  'packages.microsoft.com',
+  'pkg.go.dev',
+  'playwright.azureedge.net',
+  'ports.ubuntu.com',
+  'production.cloudflare.docker.com',
+  'production.cloudfront.docker.com',
+  'proxy.golang.org',
+  'pub.dev',
+  'pypa.io',
+  'pypi.org',
+  'pypi.python.org',
+  'pythonhosted.org',
+  'quay.io',
+  'raw.githubusercontent.com',
+  'registry-1.docker.io',
+  'registry.k8s.io',
+  'registry.npmjs.org',
+  'release-assets.githubusercontent.com',
+  'repo.maven.apache.org',
+  'rubygems.org',
+  'rubyonrails.org',
+  'rustup.rs',
+  'security.ubuntu.com',
+  'services.gradle.org',
+  'sh.rustup.rs',
+  'spring.io',
+  'static.crates.io',
+  'static.rust-lang.org',
+  'sum.golang.org',
+  'swift.org',
+  'unpkg.com',
+  'yarnpkg.com',
+  'ziglang.org'
+]);
+
+const DEFAULT_ALLOWED_SUFFIXES = [
+  '.amazontrust.com',
+  '.bun.sh',
+  '.debian.org',
+  '.digicert.com',
+  '.docker.com',
+  '.docker.io',
+  '.github.com',
+  '.githubcopilot.com',
+  '.githubusercontent.com',
+  '.gitlab.com',
+  '.googleapis.com',
+  '.googleusercontent.com',
+  '.gstatic.com',
+  '.gvt1.com',
+  '.hashicorp.com',
+  '.lencr.org',
+  '.microsoft.com',
+  '.npmjs.org',
+  '.one.digicert.com',
+  '.packagist.org',
+  '.pki.goog',
+  '.production.cloudflare.docker.com',
+  '.production.cloudfront.docker.com',
+  '.pythonhosted.org',
+  '.rubygems.org',
+  '.sectigo.com',
+  '.ubuntu.com',
+  '.yarnpkg.com'
+];
 
 // --- Egress control ---
 // The container uses OPENAI_BASE_URL=http://api.openai.com/v1 so requests
@@ -130,6 +248,9 @@ Sandbox.outbound = async (request: Request, rawEnv: unknown) => {
   if (env && shouldSignR2Request(request, env)) {
     return signAndFetchR2(request, env);
   }
+  if (isAllowedCodingRequest(request, env)) {
+    return fetch(request);
+  }
   console.log(`[egress] Blocked: ${request.method} ${request.url}`);
   return new Response('Forbidden by egress policy', { status: 403 });
 };
@@ -144,11 +265,31 @@ function shouldSignR2Request(request: Request, env: Env): boolean {
 function allowedHost(hostname: string, env: Env): boolean {
   const configured = env.CF_SANDBOX_ALLOWED_HOSTS;
   if (!configured) return false;
-  return configured
-    .split(',')
-    .map((host) => host.trim().toLowerCase())
+  return hostMatches(hostname, configured.split(','));
+}
+
+function isAllowedCodingRequest(request: Request, env?: Env): boolean {
+  const hostname = new URL(request.url).hostname.toLowerCase();
+  if (DEFAULT_ALLOWED_HOSTS.has(hostname)) return true;
+  if (DEFAULT_ALLOWED_SUFFIXES.some((suffix) => hostname.endsWith(suffix))) return true;
+  if (env?.CF_SANDBOX_ALLOWED_HOSTS && hostMatches(hostname, env.CF_SANDBOX_ALLOWED_HOSTS.split(','))) {
+    return true;
+  }
+  return false;
+}
+
+function hostMatches(hostname: string, patterns: string[]): boolean {
+  const normalized = hostname.toLowerCase();
+  return patterns
+    .map((pattern) => pattern.trim().toLowerCase())
     .filter(Boolean)
-    .includes(hostname.toLowerCase());
+    .some((pattern) => {
+      const host = pattern.replace(/:\d+$/, '');
+      if (host === normalized) return true;
+      if (host.startsWith('*.')) return normalized.endsWith(host.slice(1));
+      if (host.startsWith('**.')) return normalized.endsWith(host.slice(2));
+      return false;
+    });
 }
 
 async function signAndFetchR2(request: Request, env: Env): Promise<Response> {

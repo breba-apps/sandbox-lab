@@ -57,4 +57,10 @@ Durable architecture context lives in `architecture.md`; decision history lives 
 
 **Agent/CLI lifecycle:** `setup-cloudflare-sandbox`, `cf-sandbox-service`, and `start-cloudflare-sandbox` are the app-facing commands. `cf-sandbox-service` owns the local Wrangler process. `start-cloudflare-sandbox` wraps `scripts/sandbox-agent.mjs`, calls `POST /sandbox/<session>/start` to prepare the sandbox without starting the browser Codex app-server bridge, then runs `docker exec` into the marked local Wrangler container. The startup endpoint is deployable; non-local clients can attach through a deployment-specific mechanism. Existing sandbox state is reused until `SANDBOX_SLEEP_AFTER`; use `--reset` for a clean sandbox and `--no-tty` for non-interactive automation.
 
+The launcher starts Claude and Codex in full-permission mode because the
+Cloudflare Sandbox is the external security boundary. Keep
+`--dangerously-skip-permissions` for Claude and
+`--dangerously-bypass-approvals-and-sandbox` for Codex aligned with the
+bootstrap tests.
+
 **Local vs. deployed behavior:** `wrangler dev` now supports full outbound interception via a TPROXY sidecar inside the sandbox's network namespace, mirroring production behavior. The dev script sets `MINIFLARE_CONTAINER_EGRESS_IMAGE` for the local container image.

@@ -6,6 +6,8 @@ import {
   buildContainerCommand,
   buildDockerExecArgs,
   defaultCommand,
+  ensureClaudeFullPermissionArgs,
+  ensureCodexFullPermissionArgs,
   agentSandboxStartUrl,
   normalizeGithubRemote,
   parseArgs,
@@ -187,7 +189,12 @@ test('buildContainerCommand wraps codex command with login bootstrap', () => {
   assert.match(command[2], /cd \/workspace/);
   assert.match(command[2], /codex login --with-api-key/);
   assert.match(command[2], /exec "\$@"/);
-  assert.deepEqual(command.slice(3), ['codex-launcher', 'codex', '--version']);
+  assert.deepEqual(command.slice(3), [
+    'codex-launcher',
+    'codex',
+    '--dangerously-bypass-approvals-and-sandbox',
+    '--version'
+  ]);
 });
 
 test('buildContainerCommand wraps claude command with dummy credential bootstrap', () => {
@@ -206,7 +213,32 @@ test('buildContainerCommand wraps claude command with dummy credential bootstrap
   assert.match(command[2], /"expiresAt":31536001000/);
   assert.match(command[2], /cd \/workspace/);
   assert.match(command[2], /exec "\$@"/);
-  assert.deepEqual(command.slice(3), ['claude-launcher', 'claude', '-p', 'hello']);
+  assert.deepEqual(command.slice(3), [
+    'claude-launcher',
+    'claude',
+    '--dangerously-skip-permissions',
+    '-p',
+    'hello'
+  ]);
+});
+
+test('agent full-permission flags are added once', () => {
+  assert.deepEqual(
+    ensureCodexFullPermissionArgs(['codex']),
+    ['codex', '--dangerously-bypass-approvals-and-sandbox']
+  );
+  assert.deepEqual(
+    ensureCodexFullPermissionArgs(['codex', '--dangerously-bypass-approvals-and-sandbox']),
+    ['codex', '--dangerously-bypass-approvals-and-sandbox']
+  );
+  assert.deepEqual(
+    ensureClaudeFullPermissionArgs(['claude']),
+    ['claude', '--dangerously-skip-permissions']
+  );
+  assert.deepEqual(
+    ensureClaudeFullPermissionArgs(['claude', '--allow-dangerously-skip-permissions']),
+    ['claude', '--allow-dangerously-skip-permissions']
+  );
 });
 
 test('buildContainerCommand leaves arbitrary commands unchanged', () => {

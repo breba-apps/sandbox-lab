@@ -50,7 +50,12 @@ test('codex launcher logs in with the proxy OpenAI key before execing argv', () 
     /printf '%s' "\$OPENAI_API_KEY" \| codex login --with-api-key/
   );
   assert.match(command[2], /exec "\$@"/);
-  assert.deepEqual(command.slice(3), ['codex-launcher', 'codex', '--version']);
+  assert.deepEqual(command.slice(3), [
+    'codex-launcher',
+    'codex',
+    '--dangerously-bypass-approvals-and-sandbox',
+    '--version'
+  ]);
 });
 
 test('non-codex commands are not wrapped by the Codex bootstrap', () => {

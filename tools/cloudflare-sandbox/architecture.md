@@ -50,6 +50,12 @@ The agent startup endpoint is deployable and does not assume Docker. The current
 
 Future deployed clients should use the same startup endpoint and attach through a deployment-specific mechanism instead of local Docker.
 
+Claude and Codex are launched in full-permission mode because Cloudflare
+Sandbox egress and container isolation are the security boundary. The launcher
+adds `--dangerously-skip-permissions` for Claude and
+`--dangerously-bypass-approvals-and-sandbox` for Codex unless the user already
+supplied an equivalent flag.
+
 The app-facing `start-cloudflare-sandbox` command wraps this launcher. It reads
 `cloudflare-sandbox.toml`, `cloudflare-runtime.env`, and
 `cloudflare-proxy-secrets.env` from the app directory. Runtime values are sent
@@ -71,6 +77,10 @@ Allowed hosts are implemented in `Sandbox.outboundByHost`:
 - `api.anthropic.com`: injects `CLAUDE_CODE_OAUTH_TOKEN` as Bearer or `ANTHROPIC_API_KEY` as `x-api-key`, upgrades to HTTPS.
 - `platform.claude.com`: supports Claude Code OAuth validation with Bearer auth.
 - `github.com`: upgrades to HTTPS and injects `GITHUB_TOKEN` as Basic auth when present.
+- Common coding hosts: package registries, GitHub release/raw asset hosts,
+  Docker registries, language toolchain hosts, OS mirrors, CDN hosts, and
+  certificate validation hosts are allowed by default for normal coding-agent
+  workflows.
 - Allowed `*.r2.cloudflarestorage.com` hosts: requests are resigned with
   Worker-side R2 credentials using SigV4. The container receives placeholders
   only.

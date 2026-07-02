@@ -288,14 +288,16 @@ function findSandboxContainer(session, deps = {}) {
 // starts without an interactive login. App-server mode skips this gate entirely.
 function buildContainerCommand(command, deps = {}) {
   if (command[0] === 'codex') {
+    const agentCommand = ensureCodexFullPermissionArgs(command);
     return [
       'bash', '-lc',
       'cd /workspace 2>/dev/null; printf \'%s\' "$OPENAI_API_KEY" | codex login --with-api-key && exec "$@"',
       'codex-launcher',
-      ...command
+      ...agentCommand
     ];
   }
   if (command[0] === 'claude') {
+    const agentCommand = ensureClaudeFullPermissionArgs(command);
     // Claude Code's CLAUDE_CODE_OAUTH_TOKEN env var is unreliable (anthropics/
     // claude-code#8938) and overrides the credentials file (#16238), so we seed
     // ~/.claude/.credentials.json directly and mark onboarding complete. The
@@ -319,9 +321,26 @@ function buildContainerCommand(command, deps = {}) {
       'chmod 600 ~/.claude/.credentials.json && ' +
       `printf '%s' '${onboarding}' > ~/.claude.json && ` +
       'cd /workspace 2>/dev/null;';
-    return ['bash', '-lc', `${prelude} exec "$@"`, 'claude-launcher', ...command];
+    return ['bash', '-lc', `${prelude} exec "$@"`, 'claude-launcher', ...agentCommand];
   }
   return command;
+}
+
+function ensureCodexFullPermissionArgs(command) {
+  if (command.includes('--dangerously-bypass-approvals-and-sandbox')) {
+    return command;
+  }
+  return [command[0], '--dangerously-bypass-approvals-and-sandbox', ...command.slice(1)];
+}
+
+function ensureClaudeFullPermissionArgs(command) {
+  if (
+    command.includes('--dangerously-skip-permissions') ||
+    command.includes('--allow-dangerously-skip-permissions')
+  ) {
+    return command;
+  }
+  return [command[0], '--dangerously-skip-permissions', ...command.slice(1)];
 }
 
 function buildDockerExecArgs(containerId, command, opts = {}) {
@@ -407,6 +426,8 @@ export {
   buildDockerExecArgs,
   defaultCommand,
   defaultSessionName,
+  ensureClaudeFullPermissionArgs,
+  ensureCodexFullPermissionArgs,
   findSandboxContainer,
   inferGithubRemote,
   main,

@@ -1,4 +1,4 @@
-FROM docker.io/cloudflare/sandbox:0.10.2
+FROM docker.io/cloudflare/sandbox:0.12.3-python
 
 # bubblewrap: codex's preferred sandbox backend (avoids the bundled-fallback warning).
 RUN apt-get update \

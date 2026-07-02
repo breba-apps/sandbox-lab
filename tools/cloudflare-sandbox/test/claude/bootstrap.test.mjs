@@ -32,7 +32,12 @@ test('claude launcher seeds dummy OAuth credentials and onboarding state', () =>
     '~/.claude.json'
   );
 
-  assert.deepEqual(command.slice(3), ['claude-launcher', 'claude', '--version']);
+  assert.deepEqual(command.slice(3), [
+    'claude-launcher',
+    'claude',
+    '--dangerously-skip-permissions',
+    '--version'
+  ]);
   assert.match(script, /mkdir -p ~\/\.claude/);
   assert.match(script, /chmod 600 ~\/\.claude\/\.credentials\.json/);
   assert.match(script, /cd \/workspace 2>\/dev\/null;/);
@@ -55,6 +60,7 @@ test('claude launcher preserves argv after the bootstrap sentinel', () => {
   assert.deepEqual(command.slice(3), [
     'claude-launcher',
     'claude',
+    '--dangerously-skip-permissions',
     '-p',
     'Reply exactly: OK'
   ]);

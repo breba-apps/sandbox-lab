@@ -1,0 +1,43 @@
+{
+  "name": "cloudflare-sandbox",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Cloudflare Sandbox setup/start tool with local Wrangler attach and Worker-side egress proxying",
+  "bin": {
+    "cf-sandbox-service": "scripts/cf-sandbox-service.mjs",
+    "setup-cloudflare-sandbox": "scripts/setup-cloudflare-sandbox.mjs",
+    "start-cloudflare-sandbox": "scripts/start-cloudflare-sandbox.mjs"
+  },
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "MINIFLARE_CONTAINER_EGRESS_IMAGE=cloudflare/proxy-everything:3cb1195@sha256:78c7910f4575a511d928d7824b1cbcaec6b7c4bf4dbb3fafaeeae3104030e73c wrangler dev",
+    "start": "wrangler dev",
+    "cf-sandbox-service": "node scripts/cf-sandbox-service.mjs",
+    "setup-cloudflare-sandbox": "node scripts/setup-cloudflare-sandbox.mjs",
+    "start-cloudflare-sandbox": "node scripts/start-cloudflare-sandbox.mjs",
+    "sagent": "node scripts/sandbox-agent.mjs",
+    "sclaude": "node scripts/sandbox-agent.mjs",
+    "scodex": "node scripts/sandbox-agent.mjs",
+    "cf-typegen": "wrangler types",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run test:unit && npm run test:integration:web",
+    "test:unit": "node --test test/unit/*.test.mjs test/claude/*.test.mjs test/codex/*.test.mjs test/integration/local-cli.test.mjs",
+    "test:integration:web": "bash test/run-integration-tests.sh test/integration/web-app.test.mjs",
+    "test:integration:legacy": "./run-integration-tests.sh",
+    "test:egress": "bash test/run-integration-tests.sh test-egress.mjs"
+  },
+  "devDependencies": {
+    "@cloudflare/sandbox": "^0.10.2",
+    "@cloudflare/workers-types": "^4.20260701.1",
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.76.0"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@cloudflare/containers": "^0.3.0",
+    "aws4fetch": "^1.0.20"
+  }
+}
